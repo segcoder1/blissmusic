@@ -1,7 +1,7 @@
 import math
 from pyrogram.enums import ButtonStyle
 
-from pyrogram.types import InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from Oneforall import app
 from Oneforall.utils.formatters import time_to_seconds
