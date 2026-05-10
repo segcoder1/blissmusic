@@ -420,8 +420,8 @@ class Call(PyTgCalls):
                            pass
 
                          return
-                         except Exception as e:
-                           print(f"Autoplay Error: {e}")
+        except Exception as e:
+          print(f"Autoplay Error: {e}")
                 await _clear_(chat_id)
                 try:
                     buttons = InlineKeyboardMarkup(
