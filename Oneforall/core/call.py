@@ -404,8 +404,8 @@ class Call(PyTgCalls):
 
                                 db[chat_id][0]["mystic"] = run
 
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                print(f"AUTOPLAY CARD ERROR: {e}")
 
                             return
                     except Exception as e:
