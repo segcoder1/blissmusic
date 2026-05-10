@@ -1121,31 +1121,28 @@ async def set_autoplay_status(chat_id: int, status: bool):
         await autoplay_off(chat_id)
 
 
-async def get_autoplay_mood(chat_id: int) -> str:
-    """Get the saved mood preference for autoplay"""
-    data = await autoplaydb.find_one({"chat_id": chat_id})
-    return data.get("mood", "Happy") if data else "Happy"
+async def set_autoplay(chat_id: int, status: bool):
+    """Set autoplay enabled/disabled status"""
+    await autoplaydb.update_one(
+        {"chat_id": chat_id},
+        {"$set": {"enabled": status}},
+        upsert=True
+    )
 
 
-async def set_autoplay_mood(chat_id: int, mood: str):
+async def set_autoplay_mood(chat_id: int, mood_data: dict):
     """Set the mood preference for autoplay"""
     await autoplaydb.update_one(
         {"chat_id": chat_id},
-        {"$set": {"mood": mood}},
+        {"$set": {"mood_data": mood_data}},
         upsert=True
     )
 
+# Also fixed get_autoplay_mood to return dict:
 
-async def get_autoplay_language(chat_id: int) -> str:
-    """Get the saved language preference for autoplay"""
+async def get_autoplay_mood(chat_id: int) -> dict:
+    """Get the saved mood preference for autoplay"""
     data = await autoplaydb.find_one({"chat_id": chat_id})
-    return data.get("language", "English") if data else "English"
-
-
-async def set_autoplay_language(chat_id: int, language: str):
-    """Set the language preference for autoplay"""
-    await autoplaydb.update_one(
-        {"chat_id": chat_id},
-        {"$set": {"language": language}},
-        upsert=True
-    )
+    if data and "mood_data" in data:
+        return data.get("mood_data", {"mood": "Happy", "language": "English"})
+    return {"mood": "Happy", "language": "English"}
