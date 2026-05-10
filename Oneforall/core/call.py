@@ -356,10 +356,7 @@ class Call(PyTgCalls):
                 autoplay = await is_autoplay_on(chat_id)
                 if autoplay:
                     try:
-                        track_data, track_id = await get_autoplay_recommendation(
-                            chat_id,
-                            0,
-                        )
+                        track_data, track_id = await get_autoplay_recommendation(chat_id)
 
                         if track_data and track_id:
                             title = track_data.get("title", "Unknown")
