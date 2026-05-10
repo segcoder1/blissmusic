@@ -93,8 +93,6 @@ def stream_markup(_, videoid, chat_id):
 # Autoplay Markup Functions
 
 def autoplay_mood_markup():
-    """Generate mood selection buttons for autoplay"""
-
     moods = [
         ("ʜᴀᴘᴘʏ", "happy"),
         ("sᴀᴅ", "sad"),
@@ -127,10 +125,15 @@ def autoplay_mood_markup():
         buttons.append(row)
 
     buttons.append(
-        [InlineKeyboardButton(text="❌ ᴄʟᴏsᴇ", callback_data="close")]
+        [
+            InlineKeyboardButton(
+                text="❌ ᴄʟᴏsᴇ",
+                callback_data="close"
+            )
+        ]
     )
 
-    return buttons
+    return InlineKeyboardMarkup(buttons)
 
 
 def autoplay_language_markup():
@@ -171,8 +174,8 @@ def autoplay_language_markup():
         [InlineKeyboardButton(text="❌ ᴄʟᴏsᴇ", callback_data="close")]
     )
 
-    return buttons
-
+    return InlineKeyboardMarkup(buttons)
+    
 def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     buttons = [
         [
