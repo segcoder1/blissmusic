@@ -5,7 +5,7 @@ from typing import Union
 
 from ntgcalls import TelegramServerError
 from pyrogram import Client
-from pyrogram.types import InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pytgcalls import PyTgCalls
 from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall
 from pytgcalls.types import AudioQuality, MediaStream, Update, VideoQuality
