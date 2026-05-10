@@ -2,7 +2,7 @@ import random
 import string
 
 from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message
+from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message, ChatMemberStatus
 from pytgcalls.exceptions import NoActiveGroupCall
 
 from Oneforall.utils.inline import (
@@ -14,7 +14,7 @@ from Oneforall.utils.inline import (
     autoplay_mood_markup,
     autoplay_language_markup,
 )
-from Oneforall.utils.database import is_autoplay_on, get_autoplay_mood
+from Oneforall.utils.database import is_autoplay_on, get_autoplay_mood, set_autoplay_mood, set_autoplay_status
 
 import config
 from config import BANNED_USERS, lyrical
@@ -524,7 +524,7 @@ async def play_music(client, CallbackQuery, _):
 async def piyush_check(client, CallbackQuery):
     try:
         await CallbackQuery.answer(
-            "» ʀᴇᴠᴇʀᴛ ʙᴀᴄᴋ ᴛᴏ ᴜsᴇʀ ᴀᴄᴄᴏᴜɴᴛ :\n\nᴏᴘᴇɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ sᴇᴛᴛɪɴɢs.\n-> ᴀᴅᴍɪɴɪsᴛʀᴀᴛᴏʀs\n-> ᴄʟɪᴄᴋ ᴏɴ ʏᴏᴜʀ ɴᴀᴍᴇ\n-> ᴜɴᴄʜᴇᴄᴋ ᴀɴᴏɴʏᴍᴏᴜs ᴀᴅᴍɪɴ ᴘᴇʀᴍɪssɪᴏɴs.",
+            "» ʀᴇᴠᴇʀᴛ ʙᴀᴄᴋ ᴛᴏ ᴜsᴇʀ ᴀᴄᴄᴏᴜɴᴛ :\n\nᴏᴘᴇɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ sᴇᴛᴛɪɴɢs.\n-> ᴀᴅᴍɪɴɪsᴛʀᴀᴛᴏʀs\n-> ᴄʟɪᴄᴋ ᴏɴ ʏᴏᴜʀ ɴᴀᴍᴇ\n-> ᴘʀɪᴠᴀᴛᴇ ᴛʜɪs ᴀᴄᴄ ᴏɴ/ᴏғғ",
             show_alert=True,
         )
     except:
@@ -680,3 +680,193 @@ async def slider_queries(client, CallbackQuery, _):
         return await CallbackQuery.edit_message_media(
             media=med, reply_markup=InlineKeyboardMarkup(buttons)
         )
+
+
+@app.on_message(filters.command("songconfig") & filters.group & ~BANNED_USERS)
+@languageCB
+async def songconfig_command(client, message: Message, _):
+    """
+    /songconfig command - Opens mood selection menu for autoplay
+    Only group admins can use this command
+    """
+    # Check if user is admin
+    try:
+        member = await client.get_chat_member(message.chat.id, message.from_user.id)
+        if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+            return await message.reply_text(
+                "❌ Only group admins can use this command!"
+            )
+    except:
+        return await message.reply_text("❌ Error checking admin status!")
+    
+    # Send mood selection buttons
+    buttons = autoplay_mood_markup(_)
+    await message.reply_text(
+        "🎵 <b>Song Configuration</b>\n\n"
+        "Select your preferred mood to play songs based on that mood:",
+        reply_markup=InlineKeyboardMarkup(buttons)
+    )
+
+
+@app.on_callback_query(filters.regex("songconfig_mood") & ~BANNED_USERS)
+@languageCB
+async def songconfig_mood_callback(client, CallbackQuery, _):
+    """
+    Callback handler for mood selection
+    """
+    try:
+        # Extract mood from callback data
+        callback_data = CallbackQuery.data.strip()
+        mood = callback_data.split(None, 1)[1]
+        
+        # Check if user is admin
+        try:
+            member = await client.get_chat_member(CallbackQuery.message.chat.id, CallbackQuery.from_user.id)
+            if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return await CallbackQuery.answer(
+                    "❌ Only group admins can configure songs!",
+                    show_alert=True
+                )
+        except:
+            return await CallbackQuery.answer("❌ Error checking admin status!", show_alert=True)
+        
+        # Store mood in callback context
+        CallbackQuery.data = f"songconfig_mood_{mood}"
+        
+        # Edit message to show language selection
+        buttons = autoplay_language_markup(_)
+        await CallbackQuery.edit_message_text(
+            f"🎵 <b>Song Configuration</b>\n\n"
+            f"<b>Selected Mood:</b> {mood}\n\n"
+            f"Now select your preferred language:",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+        
+        # Store the mood in a temporary variable for the next callback
+        await CallbackQuery.answer()
+    except Exception as e:
+        await CallbackQuery.answer(f"Error: {str(e)}", show_alert=True)
+
+
+@app.on_callback_query(filters.regex("songconfig_language") & ~BANNED_USERS)
+@languageCB
+async def songconfig_language_callback(client, CallbackQuery, _):
+    """
+    Callback handler for language selection
+    Searches and plays song based on mood and language
+    """
+    try:
+        # Check if user is admin
+        try:
+            member = await client.get_chat_member(CallbackQuery.message.chat.id, CallbackQuery.from_user.id)
+            if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return await CallbackQuery.answer(
+                    "❌ Only group admins can configure songs!",
+                    show_alert=True
+                )
+        except:
+            return await CallbackQuery.answer("❌ Error checking admin status!", show_alert=True)
+        
+        # Extract language from callback data
+        callback_data = CallbackQuery.data.strip()
+        language = callback_data.split(None, 1)[1]
+        
+        # Get mood from message text (extract from previous selection)
+        message_text = CallbackQuery.message.text
+        mood_match = message_text.split("<b>Selected Mood:</b> ")[1].split("\n")[0] if "<b>Selected Mood:</b>" in message_text else "Happy"
+        
+        await CallbackQuery.answer()
+        
+        # Edit message to show loading
+        await CallbackQuery.edit_message_text(
+            f"🎵 <b>Song Configuration Confirmed</b>\n\n"
+            f"<b>Mood:</b> {mood_match}\n"
+            f"<b>Language:</b> {language}\n\n"
+            f"🔍 Searching for songs..."
+        )
+        
+        # Build search query
+        search_query = f"{mood_match} {language} songs"
+        
+        try:
+            # Search for songs on YouTube
+            details, track_id = await YouTube.track(search_query)
+            
+            # Create markup for playing the song
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        text="▶️ Play Audio",
+                        callback_data=f"MusicStream {track_id}|{CallbackQuery.from_user.id}|a|g|d",
+                    ),
+                    InlineKeyboardButton(
+                        text="🎬 Play Video",
+                        callback_data=f"MusicStream {track_id}|{CallbackQuery.from_user.id}|v|g|d",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="❌ Close",
+                        callback_data="close",
+                    )
+                ],
+            ]
+            
+            # Edit message with song details
+            await CallbackQuery.edit_message_text(
+                f"🎵 <b>Song Found!</b>\n\n"
+                f"<b>Mood:</b> {mood_match}\n"
+                f"<b>Language:</b> {language}\n"
+                f"<b>Song:</b> {details['title']}\n"
+                f"<b>Duration:</b> {details['duration_min']}\n\n"
+                f"Ready to play!",
+                reply_markup=InlineKeyboardMarkup(buttons)
+            )
+        except Exception as e:
+            await CallbackQuery.edit_message_text(
+                f"❌ Error searching for songs: {str(e)}\n\n"
+                f"<b>Mood:</b> {mood_match}\n"
+                f"<b>Language:</b> {language}"
+            )
+    except Exception as e:
+        await CallbackQuery.answer(f"Error: {str(e)}", show_alert=True)
+
+
+@app.on_callback_query(filters.regex("AutoPlay") & ~BANNED_USERS)
+@languageCB
+async def autoplay_toggle(client, CallbackQuery, _):
+    """
+    Handle autoplay toggle button
+    Only group admins can toggle autoplay
+    """
+    try:
+        chat_id = CallbackQuery.message.chat.id
+        user_id = CallbackQuery.from_user.id
+        
+        # Check if user is admin using ChatMemberStatus
+        try:
+            member = await client.get_chat_member(chat_id, user_id)
+            if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return await CallbackQuery.answer(
+                    "❌ Only group admins can toggle autoplay!",
+                    show_alert=True
+                )
+        except:
+            return await CallbackQuery.answer("❌ Error checking admin status!", show_alert=True)
+        
+        # Toggle autoplay status
+        current_status = await is_autoplay_on(chat_id)
+        new_status = not current_status
+        
+        # Save new status to database
+        await set_autoplay_status(chat_id, new_status)
+        
+        # Send notification
+        status_text = "✅ Enabled" if new_status else "❌ Disabled"
+        await CallbackQuery.answer(
+            f"🎲 AutoPlay {status_text}",
+            show_alert=False
+        )
+        
+    except Exception as e:
+        await CallbackQuery.answer(f"Error: {str(e)}", show_alert=True)
