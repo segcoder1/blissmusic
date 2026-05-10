@@ -11,6 +11,9 @@ from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall
 from pytgcalls.types import AudioQuality, MediaStream, Update, VideoQuality
 from pytgcalls.types.stream import StreamAudioEnded
 
+from Oneforall.plugins.play.autoplay import get_autoplay_recommendation
+from Oneforall.utils.database import is_autoplay_on
+
 import config
 from Oneforall import LOGGER, YouTube, app
 from Oneforall.misc import db
@@ -359,6 +362,65 @@ class Call(PyTgCalls):
                 await set_loop(chat_id, loop)
             await auto_clean(popped)
             if not check:
+                autoplay = await is_autoplay_on(chat_id)
+                if autoplay:
+                   try:
+                     track_data, track_id = await get_autoplay_recommendation(
+                         chat_id,
+                         0,
+                     )
+
+                     if track_data and track_id:
+                         title = track_data.get("title", "Unknown")
+                         duration = track_data.get("duration", "Unknown")
+                         vidid = track_id
+
+                         file_path, direct = await YouTube.download(
+                            track_id,
+                            videoid=True,
+                            video=False,
+                         )
+
+                         stream = MediaStream(
+                           file_path,
+                           audio_parameters=AudioQuality.HIGH,
+                           video_flags=MediaStream.IGNORE,
+                         )
+                         await client.change_stream(chat_id, stream)
+                         db[chat_id] = []
+
+                         db[chat_id].append(
+                           {
+                             "title": title,
+                             "dur": duration,
+                             "file": file_path,
+                             "vidid": vidid,
+                             "streamtype": "audio",
+                             "played": 0,
+                             "markup": "stream",
+                             "chat_id": chat_id,
+                             "by": "ᴀᴜᴛᴏᴘʟᴀʏ",
+                           }
+                         )
+
+                         try:
+                            img = await get_thumb(vidid)
+                            button = stream_markup(_, vidid, chat_id)
+
+                            run = await app.send_photo(
+                              chat_id=chat_id,
+                              photo=config.YOUTUBE_IMG_URL,
+                              caption=f"🎵 **ᴀᴜᴛᴏᴘʟᴀʏ**\n\n[{title}](https://t.me/{app.username}?start=info_{vidid})",
+                              reply_markup=InlineKeyboardMarkup(button),
+                            )  
+
+                            db[chat_id][0]["mystic"] = run
+                          except:
+                            pass
+
+                          return
+                      except Exception as e:
+                        print(f"Autoplay Error: {e}")
                 await _clear_(chat_id)
                 try:
                     buttons = InlineKeyboardMarkup(
