@@ -6,6 +6,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from Oneforall import app
 from Oneforall.utils.formatters import time_to_seconds
 
+from Oneforall.utils.thumbnail import get_thumbnail_status
 
 def track_markup(_, videoid, user_id, channel, fplay):
     buttons = [
@@ -28,12 +29,12 @@ def track_markup(_, videoid, user_id, channel, fplay):
     ]
     return buttons
 
-
 def stream_markup_timer(_, vidid, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
     percentage = (played_sec / duration_sec) * 100
     umm = math.floor(percentage)
+
     if 0 < umm <= 10:
         bar = "|♬—————————|"
     elif 10 < umm < 20:
@@ -54,6 +55,15 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
         bar = "|————————♬—|"
     else:
         bar = "|—————————♬|"
+
+    thumb_status = get_thumbnail_status(chat_id)
+
+    thumb_text = (
+        "🖼 ᴛʜᴜᴍʙɴᴀɪʟ : ᴏɴ"
+        if thumb_status == "on"
+        else "🖼 ᴛʜᴜᴍʙɴᴀɪʟ : ᴏғғ"
+    )
+
     buttons = [
         [
             InlineKeyboardButton(
@@ -63,19 +73,52 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
             )
         ],
         [
-            InlineKeyboardButton(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
-            InlineKeyboardButton(text="▷", callback_data=f"ADMIN Pause|{chat_id}"),
-            InlineKeyboardButton(text="💿", callback_data=f"ADMIN Replay|{chat_id}"),
+            InlineKeyboardButton(
+                text="‣‣I",
+                callback_data=f"ADMIN Skip|{chat_id}"
+            ),
+            InlineKeyboardButton(
+                text="▷",
+                callback_data=f"ADMIN Pause|{chat_id}"
+            ),
+            InlineKeyboardButton(
+                text="💿",
+                callback_data=f"ADMIN Replay|{chat_id}"
+            ),
         ],
         [
-            InlineKeyboardButton(text="ᴀᴜᴛᴏᴘʟᴀʏ 🔁", callback_data=f"AutoPlay|{chat_id}"),
+            InlineKeyboardButton(
+                text="ᴀᴜᴛᴏᴘʟᴀʏ 🔁",
+                callback_data=f"AutoPlay|{chat_id}"
+            ),
         ],
-        [InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close")],
+        [
+            InlineKeyboardButton(
+                text=thumb_text,
+                callback_data=f"THUMBTOGGLE|{chat_id}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=_["CLOSE_BUTTON"],
+                callback_data="close"
+            )
+        ],
     ]
-    return buttons
 
+    return buttons
+    
 
 def stream_markup(_, videoid, chat_id):
+
+    thumb_status = get_thumbnail_status(chat_id)
+
+    thumb_text = (
+        "🖼 ᴛʜᴜᴍʙɴᴀɪʟ : ᴏɴ"
+        if thumb_status == "on"
+        else "🖼 ᴛʜᴜᴍʙɴᴀɪʟ : ᴏғғ"
+    )
+
     buttons = [
         [
             InlineKeyboardButton(text="II", callback_data=f"ADMIN Pause|{chat_id}"),
@@ -83,14 +126,28 @@ def stream_markup(_, videoid, chat_id):
             InlineKeyboardButton(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
         ],
         [
-            InlineKeyboardButton(text="🎲 AutoPlay", callback_data=f"AutoPlay|{chat_id}"),
+            InlineKeyboardButton(
+                text="🎲 AutoPlay",
+                callback_data=f"AutoPlay|{chat_id}"
+            ),
         ],
-        [InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close")],
+        [
+            InlineKeyboardButton(
+                text=thumb_text,
+                callback_data=f"THUMBTOGGLE|{chat_id}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=_["CLOSE_BUTTON"],
+                callback_data="close"
+            )
+        ],
     ]
+
     return buttons
 
 
-# Autoplay Markup Functions
 
 def autoplay_mood_markup():
     moods = [
