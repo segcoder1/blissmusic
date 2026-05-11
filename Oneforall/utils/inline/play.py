@@ -6,7 +6,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from Oneforall import app
 from Oneforall.utils.formatters import time_to_seconds
 
-from Oneforall.utils.thumbnail import get_thumbnail_status
+from Oneforall.utils.stream.thumbnail import get_thumbnail_status
 
 def track_markup(_, videoid, user_id, channel, fplay):
     buttons = [
