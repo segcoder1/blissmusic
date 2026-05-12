@@ -7,7 +7,7 @@ from pyrogram.types import Message
 API_URL = "http://45.77.174.241:9090"
 
 
-class YouTube:
+class YouTubeAPI:
 
     def __init__(self):
         self.api = API_URL
