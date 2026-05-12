@@ -82,3 +82,24 @@ class YouTubeAPI:
         if not video_id:
             return None, None
         return await self.get_video(video_id)
+
+    async def url(self, message):
+    from pyrogram.enums import MessageEntityType
+
+    messages = [message]
+    if message.reply_to_message:
+        messages.append(message.reply_to_message)
+
+    for msg in messages:
+        if msg.entities:
+            for entity in msg.entities:
+                if entity.type == MessageEntityType.URL:
+                    text = msg.text or msg.caption
+                    return text[entity.offset: entity.offset + entity.length]
+
+        if msg.caption_entities:
+            for entity in msg.caption_entities:
+                if entity.type == MessageEntityType.TEXT_LINK:
+                    return entity.url
+
+    return None
