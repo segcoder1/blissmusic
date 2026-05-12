@@ -113,3 +113,6 @@ class YouTubeAPI:
         if not video_id:
             return None, None
         return await self.get_video(video_id)
+
+print("QUERY:", query)
+print("RESULT:", results)
