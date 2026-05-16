@@ -9,7 +9,7 @@ from Oneforall import app
 AUTO = True
 
 ADD_INTERVAL = 1  # Add every day (in seconds)
-users = "@Oneforall_rebot"
+users = "@snowy_x_musicbot"
 
 
 async def add_bot_to_chats():
