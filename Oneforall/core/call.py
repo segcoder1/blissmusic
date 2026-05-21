@@ -10,7 +10,7 @@ from pytgcalls import PyTgCalls
 from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall
 from pytgcalls.types import AudioQuality, MediaStream, Update, VideoQuality
 from pytgcalls.types.stream import StreamAudioEnded
-
+from Oneforall.utils.inline.play import stream_markup_timer
 from Oneforall.plugins.play.autoplay import get_autoplay_recommendation
 from Oneforall.utils.database import is_autoplay_on
 
@@ -342,74 +342,106 @@ class Call(PyTgCalls):
                 autoend[chat_id] = datetime.now() + timedelta(minutes=1)
 
     async def change_stream(self, client, chat_id):
-        check = db.get(chat_id)
-        popped = None
-        loop_value = await get_loop(chat_id)
         try:
-            if loop_value == 0:
-                popped = check.pop(0)
-            else:
-                loop_value = loop_value - 1
-                await set_loop(chat_id, loop_value)
-            await auto_clean(popped)
-            if not check:
-                autoplay = await is_autoplay_on(chat_id)
-                if autoplay:
-                    try:
-                        track_data, track_id = await get_autoplay_recommendation(chat_id)
+            check = db.get(chat_id)
+            popped = None
+            loop_value = await get_loop(chat_id)
+            try:
+                if loop_value == 0:
+                    popped = check.pop(0)
+                else:
+                    loop_value = loop_value - 1
+                    await set_loop(chat_id, loop_value)
+                await auto_clean(popped)
+                if not check:
+                    autoplay = await is_autoplay_on(chat_id)
+                    if autoplay:
+                        try:
+                            track_data, track_id = await get_autoplay_recommendation(chat_id)
 
-                        if track_data and track_id:
-                            title = track_data.get("title", "Unknown")
-                            duration = track_data.get("duration", "Unknown")
-                            vidid = track_id
+                            if track_data and track_id:
+                                title = track_data.get("title", "Unknown")
+                                duration = track_data.get("duration", "Unknown")
+                                vidid = track_id
 
-                            file_path, direct = await YouTube.download(
-                                track_id,
-                                None,
-                                videoid=True,
-                                video=False,
-                            )
-
-                            stream = MediaStream(
-                                file_path,
-                                audio_parameters=AudioQuality.HIGH,
-                                video_flags=MediaStream.IGNORE,
-                            )
-                            await client.change_stream(chat_id, stream)
-                            db[chat_id] = []
-
-                            db[chat_id].append(
-                                {
-                                    "title": title,
-                                    "dur": duration,
-                                    "file": file_path,
-                                    "vidid": vidid,
-                                    "streamtype": "audio",
-                                    "played": 0,
-                                    "markup": "stream",
-                                    "chat_id": chat_id,
-                                    "by": "ᴀᴜᴛᴏᴘʟᴀʏ",
-                                }
-                            )
-
-                            try:
-                                button = stream_markup(_, vidid, chat_id)
-
-                                run = await app.send_photo(
-                                    chat_id=chat_id,
-                                    photo=config.YOUTUBE_IMG_URL,
-                                    caption=f"🎵 **ᴀᴜᴛᴏᴘʟᴀʏ**\n\n[{title}](https://t.me/{app.username}?start=info_{vidid})",
-                                    reply_markup=InlineKeyboardMarkup(button),
+                                file_path, direct = await YouTube.download(
+                                    track_id,
+                                    None,
+                                    videoid=True,
+                                    video=False,
                                 )
 
-                                db[chat_id][0]["mystic"] = run
+                                filter_value = ACTIVE_FILTERS.get(chat_id)
+                                ffmpeg_params = ""
+                                if filter_value:
+                                    ffmpeg_params = f'-af "{filter_value}"'
 
-                            except:
+                                stream = MediaStream(
+                                    file_path,
+                                    audio_parameters=AudioQuality.HIGH,
+                                    video_flags=MediaStream.IGNORE,
+                                    ffmpeg_parameters=ffmpeg_params if ffmpeg_params else None,
+                                )
+                                await client.change_stream(chat_id, stream)
+                                db[chat_id] = []
+
+                                db[chat_id].append(
+                                    {
+                                        "title": title,
+                                        "dur": duration,
+                                        "file": file_path,
+                                        "vidid": vidid,
+                                        "streamtype": "audio",
+                                        "played": 0,
+                                        "markup": "stream",
+                                        "chat_id": chat_id,
+                                        "by": "ᴀᴜᴛᴏᴘʟᴀʏ",
+                                    }
+                                )
+
+                                try:
+                                    button = stream_markup({"CLOSE_BUTTON": "ᴄʟᴏsᴇ"}, vidid, chat_id)
+
+                                    run = await app.send_photo(
+                                        chat_id=chat_id,
+                                        photo=config.YOUTUBE_IMG_URL,
+                                        caption=f"🎶 <b>ᴀᴜᴛᴏᴘʟᴀʏ ᴀᴅᴅᴇᴅ</b>\n\n<blockquote>🎧 <b>{title}</b>\n└ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ᴀᴅᴅᴇᴅ ᴛᴏ ǫᴜᴇᴜᴇ</blockquote>\n\n🔗 <a href='https://t.me/{app.username}?start=info_{vidid}'>ᴠɪᴇᴡ ᴅᴇᴛᴀɪʟꜱ</a>",
+                                        reply_markup=InlineKeyboardMarkup(button),
+                                    )
+
+                                    db[chat_id][0]["mystic"] = run
+
+                                except:
+                                    pass
+
+                                return
+                        except Exception as e:
+                            LOGGER(__name__).error(f"Autoplay Error: {e}")
+                            await log_error(f"Autoplay error in chat {chat_id}", e)
+                            await _clear_(chat_id)
+                            try:
+                                buttons = InlineKeyboardMarkup(
+                                    [
+                                        [
+                                            InlineKeyboardButton(
+                                                "✙ ʌᴅᴅ ϻє вᴧʙʏ ✙",
+                                                url=f"https://t.me/{app.username}?startgroup=true",
+                                            ),
+                                            InlineKeyboardButton(
+                                                "⋞ ᴄʟᴏsє ⋟", callback_data="close"
+                                            ),
+                                        ]
+                                    ]
+                                )
+                                await app.send_message(
+                                    chat_id,
+                                    "⛩️ 𝐓ʜᴇ 𝐐ᴜᴇᴜᴇ 𝐇ᴀs 𝐅ɪɴɪsʜᴇᴅ. 𝐔sᴇ /play 𝐓ᴏ 𝐀ᴅᴅ 𝐌ᴏʀᴇ 𝐒ᴏɴɢs!!",
+                                    reply_markup=buttons,
+                                )
+                            except Exception:
                                 pass
-
-                            return
-                    except Exception as e:
-                        LOGGER(__name__).error(f"Autoplay Error: {e}")
+                            return await client.leave_group_call(chat_id)
+                    else:
                         await _clear_(chat_id)
                         try:
                             buttons = InlineKeyboardMarkup(
@@ -433,7 +465,9 @@ class Call(PyTgCalls):
                         except Exception:
                             pass
                         return await client.leave_group_call(chat_id)
-                else:
+            except Exception as e:
+                await log_error(f"Error in change_stream loop handling for chat {chat_id}", e)
+                try:
                     await _clear_(chat_id)
                     try:
                         buttons = InlineKeyboardMarkup(
@@ -451,39 +485,14 @@ class Call(PyTgCalls):
                         )
                         await app.send_message(
                             chat_id,
-                            "⛩️ 𝐓ʜᴇ 𝐐ᴜᴇᴜᴇ 𝐇ᴀs 𝐅ɪɴɪsʜᴇᴅ. 𝐔sᴇ /play 𝐓ᴏ 𝐀ᴅᴅ 𝐌ᴏʀᴇ 𝐒ᴏɴɢs!!",
+                            "🗑️ 𝐓ʜᴇ 𝐐ᴜᴇᴜᴇ 𝐇ᴀs 𝐅ɪɴɪsʜᴇᴅ. 𝐔sᴇ /play 𝐓ᴏ 𝐀ᴅᴅ 𝐌ᴏʀᴇ 𝐒ᴏɴɢs!!",
                             reply_markup=buttons,
                         )
                     except Exception:
                         pass
                     return await client.leave_group_call(chat_id)
-        except Exception:
-            try:
-                await _clear_(chat_id)
-                try:
-                    buttons = InlineKeyboardMarkup(
-                        [
-                            [
-                                InlineKeyboardButton(
-                                    "✙ ʌᴅᴅ ϻє вᴧʙʏ ✙",
-                                    url=f"https://t.me/{app.username}?startgroup=true",
-                                ),
-                                InlineKeyboardButton(
-                                    "⋞ ᴄʟᴏsє ⋟", callback_data="close"
-                                ),
-                            ]
-                        ]
-                    )
-                    await app.send_message(
-                        chat_id,
-                        "🗑️ 𝐓ʜᴇ 𝐐ᴜᴇᴜᴇ 𝐇ᴀs 𝐅ɪɴɪsʜᴇᴅ. 𝐔sᴇ /play 𝐓ᴏ 𝐀ᴅᴅ 𝐌ᴏʀᴇ 𝐒ᴏɴɢs!!",
-                        reply_markup=buttons,
-                    )
                 except Exception:
-                    pass
-                return await client.leave_group_call(chat_id)
-            except Exception:
-                return
+                    return
         else:
             queued = check[0]["file"]
             language = await get_lang(chat_id)
