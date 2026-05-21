@@ -370,16 +370,10 @@ class Call(PyTgCalls):
                                 video=False,
                             )
 
-                            filter_value = ACTIVE_FILTERS.get(chat_id)
-                            ffmpeg_params = ""
-                            if filter_value:
-                                ffmpeg_params = f'-af "{filter_value}"'
-
                             stream = MediaStream(
                                 file_path,
                                 audio_parameters=AudioQuality.HIGH,
                                 video_flags=MediaStream.IGNORE,
-                                ffmpeg_parameters=ffmpeg_params if ffmpeg_params else None,
                             )
                             await client.change_stream(chat_id, stream)
                             db[chat_id] = []
