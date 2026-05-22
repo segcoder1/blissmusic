@@ -40,7 +40,19 @@ try:
         loop.run_until_complete(load_api_url())
 except RuntimeError:
     pass
+import aiohttp
 
+API = "https://api.yourdomain.com"
+
+async def fetch_song(video_id: str) -> bytes:
+    async with aiohttp.ClientSession() as s:
+        async with s.get(f"{API}/download", params={"url": video_id, "type": "audio"}) as r:
+            data = await r.json()
+        token = data["download_token"]
+        headers = {"X-Download-Token": token}
+        async with s.get(f"{API}/stream/{video_id}", headers=headers) as r:
+            return await r.read()
+            
 async def download_song(link: str) -> str:
     global YOUR_API_URL
 
