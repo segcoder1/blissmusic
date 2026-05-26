@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 # Import your app instance and config
 try:
     from Oneforall import app
-    from config import OWNER_ID, SUDOERS
+    from config import OWNER_ID
+    from Oneforall.misc import SUDOERS
 except ImportError as e:
     raise ImportError(f"Could not import required modules: {e}")
 
