@@ -398,7 +398,7 @@ class Call(PyTgCalls):
                                 run = await app.send_photo(
                                     chat_id=chat_id,
                                     photo=thumbnail,
-                                    caption=f"<blockquote>🦋.𝐒ʈᴧʀʈ𝛆ɗ 𝐒ʈʀ𝛆ɑɱɩŋʛ 𝐀ᴜᴛ๏ᴘɭɑɣ ✮</b></blockquote>\n\n<blockquote><b>🦋.𝐓ɩttɭ𝛆 » : {title}</b></blockquote>\n<blockquote><b><u>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ <a href="https://t.me/theinfinitynetwork">˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></u></b></blockquote>\n\n ",
+                                    caption=f"<blockquote>🦋.𝐒ʈᴧʀʈ𝛆ɗ 𝐒ʈʀ𝛆ɑɱɩŋʛ 𝐀ᴜᴛ๏ᴘɭɑɣ ✮</blockquote>\n\n<blockquote><b>🦋.𝐓ɩttɭ𝛆 » : {title}</b></blockquote>\n<blockquote><b><u>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ <a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></u></b></blockquote>\n\n",
                                     reply_markup=InlineKeyboardMarkup(button),
                                 )
 
