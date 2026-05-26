@@ -39,7 +39,7 @@ from strings import get_string
 autoend = {}
 counter = {}
 loop = asyncio.get_event_loop_policy().get_event_loop()
-thumbnail = f"https://img.youtube.com/vi/{vidid}/hqdefault.jpg"
+
 
 async def _clear_(chat_id):
     db[chat_id] = []
