@@ -121,10 +121,11 @@ async def start_pm(client, message: Message, _):
             )
 
     # NORMAL START
-    await message.reply_text(
-        text=f"❄️ <b>Snowy welcomes you!</b>\n\n"
-        + _["start_2"].format(message.from_user.mention, app.mention),
+    await message.reply_photo(
+        photo=config.START_IMG_URL,    
+        text=_["start_2"].format(message.from_user.mention, app.mention),
         reply_markup=InlineKeyboardMarkup(private_panel(_)),
+        has_spoiler=True,
     )
 
     if await is_on_off(2):
