@@ -103,7 +103,7 @@ def group_help_pagination(_, page: int = 0):
         nav_row.append(
             InlineKeyboardButton(
                 text="⬅️",
-                callback_data=f"help_page {page - 1}",
+                callback_data=f"group_help_page {page - 1}",
                 style=ButtonStyle.SUCCESS,
             )
         )
@@ -111,7 +111,7 @@ def group_help_pagination(_, page: int = 0):
     nav_row.append(
         InlineKeyboardButton(
             text="❌",
-            callback_data="close",
+            callback_data="close_help_group",
         )
     )
     
@@ -119,7 +119,7 @@ def group_help_pagination(_, page: int = 0):
         nav_row.append(
             InlineKeyboardButton(
                 text="➡️",
-                callback_data=f"help_page {page + 1}",
+                callback_data=f"group_help_page {page + 1}",
                 style=ButtonStyle.SUCCESS,
             )
         )
