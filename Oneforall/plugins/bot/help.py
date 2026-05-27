@@ -66,7 +66,7 @@ async def help_com_group(client, message: Message, _):
         ]
     )
     await message.reply_video(
-        video="https://files.catbox.moe/dfj9zk.mp4",
+        video="https://graph.org/file/7e7556e659643463d0054-3701b9b25163759080.mp4",
         caption=_["help_2"],
         reply_markup=keyboard,
     )
