@@ -28,11 +28,8 @@ async def monthly_members(_, message: Message):
     total_users = len(monthly_users)
 
     text = (
-        f"<b>📊 ᴍᴏɴᴛʜʟʏ ʙᴏᴛ sᴛᴀᴛᴜs</b>
-
-"
-        f"👥 ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs: <code>{total_users}</code>
-"
+        f"<b>📊 ᴍᴏɴᴛʜʟʏ ʙᴏᴛ sᴛᴀᴛᴜs</b>"
+        f"👥 ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs: <code>{total_users}</code>"
         f"🤖 ʙᴏᴛ sᴛᴀᴛᴜs : <b>active</b>"
     )
 
