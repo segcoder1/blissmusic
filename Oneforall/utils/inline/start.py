@@ -26,9 +26,8 @@ def private_panel(_):
             InlineKeyboardButton(text=_["S_B_5"], url="https://t.me/deafen_ackerman"),
         ],
         [
-            InlineKeyboardButton(
-                text=_["S_B_3"],
-                url=f"https://t.me/{app.username}?startgroup=true"
+            InlineKeyboardButton(text="☁️sᴏᴜʀᴄᴇ☁️",callback_data="repo"
+            )
             ),
             InlineKeyboardButton(text=_["S_B_4"], callback_data="settings_back_helper"),
         ],
