@@ -132,8 +132,8 @@ def group_help_pagination(_, page: int = 0):
     
     nav_row.append(
         InlineKeyboardButton(
-            text="ᴅᴇʟᴇᴛᴇ",
-            callback_data="close_help_group",
+            text="ʙᴀᴄᴋ",
+            callback_data="settings_baclk_helper",
         )
     )
     
