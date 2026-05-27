@@ -60,7 +60,7 @@ def help_back_markup(_):
             [
                 InlineKeyboardButton(
                     text=_["BACK_BUTTON"],
-                    callback_data=f"settings_back_helper",
+                    callback_data=f"settingsback_helper",
                 ),
             ]
         ]
@@ -133,7 +133,7 @@ def group_help_pagination(_, page: int = 0):
     nav_row.append(
         InlineKeyboardButton(
             text="ʙᴀᴄᴋ",
-            callback_data="settings_baclk_helper",
+            callback_data="settingsback_helper",
         )
     )
     
