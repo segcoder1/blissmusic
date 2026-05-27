@@ -33,7 +33,7 @@ def private_panel(_):
             InlineKeyboardButton(text=_["S_B_4"], callback_data="settings_back_helper"),
         ],
         [
-            InlineKeyboardButton(text=_["S_B_4"], callback_data="settings_back_helper"),
+            InlineKeyboardButton(text="･ʙᴏᴛ | ʏᴛ-ᴀᴘɪ ɪɴғᴏ･", callback_data="bot_info_data"),
         ],
     ]
     return buttons
