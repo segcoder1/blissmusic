@@ -127,7 +127,7 @@ async def stream(
 
                     run = await app.send_photo(
                         original_chat_id,
-                        photo=thumb,
+                        photo=config.YOUTUBE_IMG_URL,
                         caption=_["stream_1"].format(
                             f"https://t.me/{app.username}?start=info_{vidid}",
                             title[:18],
@@ -204,7 +204,7 @@ async def stream(
 
                 await app.send_photo(
                     chat_id=original_chat_id,
-                    photo=thumb,
+                    photo=config.YOUTUBE_IMG_URL,
                     caption=_["queue_4"].format(
                         position, title[:18], duration_min, user_name
                     ),
@@ -261,7 +261,7 @@ async def stream(
 
                 run = await app.send_photo(
                     original_chat_id,
-                    photo=thumb,
+                    photo=config.YOUTUBE_IMG_URL,
                     caption=_["stream_1"].format(
                         f"https://t.me/{app.username}?start=info_{vidid}",
                         title[:18],
