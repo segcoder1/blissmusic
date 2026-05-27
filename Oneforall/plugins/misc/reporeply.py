@@ -4,6 +4,7 @@ from pyrogram.types import (
     CallbackQuery,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    InputMediaVideo,
 )
 
 from Oneforall import app
@@ -52,18 +53,19 @@ async def repo_callback(_, query: CallbackQuery):
     )
 
     await query.message.edit_media(
-        media={
-            "type": "video",
-            "media": REPO_VID_URL,
-            "caption": strings["repocaption"],
-        },
+        media=InputMediaVideo(
+            media=REPO_VID_URL,
+            caption=strings["repocaption"],
+        ),
         reply_markup=buttons,
     )
 
+
+# back button callback
 @app.on_callback_query(filters.regex("^help_back$"))
 async def help_back(_, query: CallbackQuery):
     await query.message.edit_text(
-        text="<",
+        text="ʙᴀᴄᴋ ᴛᴏ ʜᴇʟᴘ ᴍᴇɴᴜ",
         reply_markup=InlineKeyboardMarkup(
             [
                 [
