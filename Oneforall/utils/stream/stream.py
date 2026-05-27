@@ -118,9 +118,16 @@ async def stream(
                 button = stream_markup(_, vidid, chat_id)
 
                 if thumb_on:
-                    run = await app.send_video(
+                    thumb = await get_thumb(
+                        thumbnail,
+                        title,
+                        user_name,
+                        duration_min,
+                    )
+
+                    run = await app.send_photo(
                         original_chat_id,
-                        video=config.YOUTUBE_VID_URL,
+                        photo=thumb,
                         caption=_["stream_1"].format(
                             f"https://t.me/{app.username}?start=info_{vidid}",
                             title[:18],
@@ -129,6 +136,12 @@ async def stream(
                         ),
                         reply_markup=InlineKeyboardMarkup(button),
                     )
+
+                    try:
+                        os.remove(thumb)
+                    except:
+                        pass
+
                 else:
                     run = await app.send_message(
                         original_chat_id,
@@ -182,14 +195,27 @@ async def stream(
             thumb_on = get_thumbnail_status(chat_id) == "on"
 
             if thumb_on:
-                await app.send_video(
+                thumb = await get_thumb(
+                    thumbnail,
+                    title,
+                    user_name,
+                    duration_min,
+                )
+
+                await app.send_photo(
                     chat_id=original_chat_id,
-                    video=config.YOUTUBE_VID_URL,
+                    photo=thumb,
                     caption=_["queue_4"].format(
                         position, title[:18], duration_min, user_name
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
+
+                try:
+                    os.remove(thumb)
+                except:
+                    pass
+
             else:
                 await app.send_message(
                     chat_id=original_chat_id,
@@ -226,9 +252,16 @@ async def stream(
             thumb_on = get_thumbnail_status(chat_id) == "on"
 
             if thumb_on:
-                run = await app.send_video(
+                thumb = await get_thumb(
+                    thumbnail,
+                    title,
+                    user_name,
+                    duration_min,
+                )
+
+                run = await app.send_photo(
                     original_chat_id,
-                    video=config.YOUTUBE_VID_URL,
+                    photo=thumb,
                     caption=_["stream_1"].format(
                         f"https://t.me/{app.username}?start=info_{vidid}",
                         title[:18],
@@ -237,6 +270,12 @@ async def stream(
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
+
+                try:
+                    os.remove(thumb)
+                except:
+                    pass
+
             else:
                 run = await app.send_message(
                     original_chat_id,
