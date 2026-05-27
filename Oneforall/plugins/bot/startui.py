@@ -24,10 +24,6 @@ from Oneforall.utils.formatters import get_readable_time
 from Oneforall.utils.inline import help_pannel, private_panel, start_panel
 from strings import get_string
 
-
-# =========================
-# START → PRIVATE
-# =========================
 @app.on_message(filters.command("start") & filters.private & ~BANNED_USERS)
 @LanguageStart
 async def start_pm(client, message: Message, _):
@@ -36,10 +32,6 @@ async def start_pm(client, message: Message, _):
 
     if len(message.text.split()) > 1:
         name = message.text.split(None, 1)[1]
-
-        # =========================
-        # 🎵 LYRICS HANDLER (NEW)
-        # =========================
         if name.startswith("lyrics_"):
             key = name.split("_", 1)[1]
             lyric = lyrical.get(key)
@@ -53,8 +45,6 @@ async def start_pm(client, message: Message, _):
             else:
                 await message.reply_text(lyric)
             return
-
-        # HELP
         if name.startswith("help"):
             await message.reply_sticker(
                 "CAACAgUAAxkBAAEQ9K1p5TQsBdXVfkTvMrE5XuPpyOvpbQAC0xcAAtxe4FUWa9SzcmkqajsE"
@@ -64,8 +54,6 @@ async def start_pm(client, message: Message, _):
                 caption=_["help_1"].format(config.SUPPORT_CHAT),
                 reply_markup=help_pannel(_),
             )
-
-        # SUDO LIST
         if name.startswith("sud"):
             await sudoers_list(client=client, message=message, _=_)
             if await is_on_off(2):
@@ -76,8 +64,6 @@ async def start_pm(client, message: Message, _):
                     f"<b>Username:</b> @{message.from_user.username}",
                 )
             return
-
-        # TRACK INFO
         if name.startswith("inf"):
             m = await message.reply_text("🔎")
             query = name.replace("info_", "", 1)
@@ -119,11 +105,9 @@ async def start_pm(client, message: Message, _):
                     ]
                 ),
             )
-
-    # NORMAL START
     await message.reply_photo(
         photo=config.START_IMG_URL,    
-        text=_["start_2"].format(message.from_user.mention, app.mention),
+        caption=_["start_2"].format(message.from_user.mention, app.mention),
         reply_markup=InlineKeyboardMarkup(private_panel(_)),
         has_spoiler=True,
     )
@@ -135,11 +119,7 @@ async def start_pm(client, message: Message, _):
             f"<b>ID:</b> <code>{message.from_user.id}</code>\n"
             f"<b>Username:</b> @{message.from_user.username}",
         )
-
-
-# =========================
-# START → GROUP
-# =========================
+        
 @app.on_message(filters.command("start") & filters.group & ~BANNED_USERS)
 @LanguageStart
 async def start_gp(client, message: Message, _):
@@ -155,10 +135,6 @@ async def start_gp(client, message: Message, _):
 
     await add_served_chat(message.chat.id)
 
-
-# =========================
-# WELCOME HANDLER
-# =========================
 @app.on_message(filters.new_chat_members, group=-1)
 async def welcome_handler(client, message: Message):
     for member in message.new_chat_members:
