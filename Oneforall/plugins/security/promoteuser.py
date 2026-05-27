@@ -19,7 +19,7 @@ from Oneforall.misc import SUDOERS
 from Oneforall.core.mongo import mongodb
 from Oneforall.utils.errors import capture_err
 from Oneforall.utils.keyboard import ikb
-from Oneforall.utils.database.memorydatabase import save_filter
+from Oneforall.utils.cdatabase.memorydatabase import save_filter
 from Oneforall.utils.functions import (
     extract_user,
     extract_user_and_reason,
