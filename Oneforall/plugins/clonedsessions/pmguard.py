@@ -3,15 +3,27 @@ import json
 import os
 import time
 
-WELCOME = (
-    "Hi I am Cipher Ai, Master's Assistant.\n"
-    "Please wait for approval.\n"
-    "Type 'ok' to acknowledge."
+# =========================
+# small caps converter
+# =========================
+def small_caps(text: str) -> str:
+
+    normal = "abcdefghijklmnopqrstuvwxyz"
+    small = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ"
+
+    table = str.maketrans(normal, small)
+    return text.lower().translate(table)
+
+
+WELCOME = small_caps(
+    "hi i am cipher ai, master's assistant.\n"
+    "please wait for approval.\n"
+    "type 'ok' to acknowledge."
 )
 
-OK_REPLY = "👍 Acknowledged.\nPlease wait for approval."
+OK_REPLY = small_caps("acknowledged.\nplease wait for approval.")
 
-WARN_MSG = "⚠️ Warning {}/5\nPlease wait for approval."
+WARN_MSG = small_caps("warning {}/5\nplease wait for approval.")
 
 MAX_MSG = 5
 
@@ -67,6 +79,9 @@ class PMGuard:
 
         app = self.client
 
+        # =========================
+        # incoming handler
+        # =========================
         @app.on_message(filters.private & filters.incoming)
         async def handler(client, message):
 
@@ -111,28 +126,54 @@ class PMGuard:
             except:
                 pass
 
-        @app.on_message(filters.private & filters.outgoing & filters.regex(r"^\.a$"))
-        async def approve(client, message):
+    # =========================
+    # approve command
+    # =========================
+    @app.on_message(filters.private & filters.outgoing & filters.regex(r"^\.approve$"))
+    async def approve(client, message):
 
-            uid = message.chat.id
+        uid = message.chat.id
 
-            self.approved_users[str(uid)] = "permanent"
-            self.save_approved()
+        self.approved_users[str(uid)] = "permanent"
+        self.save_approved()
 
-            self.msg_count.pop(uid, None)
-            self.ok_seen.pop(uid, None)
+        self.msg_count.pop(uid, None)
+        self.ok_seen.pop(uid, None)
 
-            await message.reply("✅ Approved permanently")
+        try:
+            await client.send_message(
+                uid,
+                small_caps("you are approved now.")
+            )
+        except:
+            pass
 
-        @app.on_message(filters.private & filters.outgoing & filters.regex(r"^\.disapp$"))
-        async def disapprove(client, message):
+        await message.reply(
+            small_caps("user approved successfully")
+        )
 
-            uid = message.chat.id
+    # =========================
+    # disapprove command
+    # =========================
+    @app.on_message(filters.private & filters.outgoing & filters.regex(r"^\.disapprove$"))
+    async def disapprove(client, message):
 
-            self.approved_users.pop(str(uid), None)
-            self.save_approved()
+        uid = message.chat.id
 
-            self.msg_count.pop(uid, None)
-            self.ok_seen.pop(uid, None)
+        self.approved_users.pop(str(uid), None)
+        self.save_approved()
 
-            await message.reply("❌ User disapproved")
+        self.msg_count.pop(uid, None)
+        self.ok_seen.pop(uid, None)
+
+        try:
+            await client.send_message(
+                uid,
+                small_caps("you are disapproved now.")
+            )
+        except:
+            pass
+
+        await message.reply(
+            small_caps("user disapproved successfully")
+        )
