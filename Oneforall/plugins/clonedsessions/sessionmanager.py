@@ -3,7 +3,7 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 from pyrogram import Client as PyroClient
 
-from Oneforall.plugins.pmguard import PMGuard
+from Oneforall.plugins.clonedsessions.pmguard import PMGuard
 
 API_ID = 21762522
 API_HASH = "46800c1e399367a29d39554feedbe741"
