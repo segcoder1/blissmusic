@@ -3,7 +3,7 @@
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
-from Oneforallplugins.clonedsessions.pmguard import PMGuard
+from Oneforall.plugins.clonedsessions.pmguard import PMGuard
 
 API_ID = 123456
 API_HASH = "your_api_hash"
