@@ -2,7 +2,7 @@ from pyrogram import filters
 import json
 import os
 import time
-
+from Oneforall import app
 # =========================
 # small caps converter
 # =========================
