@@ -1,5 +1,4 @@
-from telethon import events
-from telethon.tl.functions.contacts import BlockRequest
+from pyrogram import filters
 import json
 import os
 import time
@@ -10,19 +9,13 @@ WELCOME = (
     "Type 'ok' to acknowledge."
 )
 
-OK_REPLY = (
-    "👍 Acknowledged.\n"
-    "Please wait for approval."
-)
+OK_REPLY = "👍 Acknowledged.\nPlease wait for approval."
 
-WARN_MSG = (
-    "⚠️ Warning {}/5\n"
-    "Please wait for approval before messaging again."
-)
+WARN_MSG = "⚠️ Warning {}/5\nPlease wait for approval."
 
 MAX_MSG = 5
 
-WELCOME_PIC = "https://i.ibb.co/WvNhxBzG/photo-2026-01-13-08-02-26-7623444305934751744.jpg"
+WELCOME_PIC = "https://i.ibb.co/WvNhxBzG/photo.jpg"
 
 
 class PMGuard:
@@ -36,7 +29,6 @@ class PMGuard:
         self.ok_seen = {}
 
         self.db_file = f"database/approved_{owner_id}.json"
-
         self.approved_users = self.load_approved()
 
     def load_approved(self):
@@ -69,21 +61,17 @@ class PMGuard:
 
         del self.approved_users[uid]
         self.save_approved()
-
         return False
 
     def load(self):
 
-        @self.client.on(events.NewMessage(incoming=True))
-        async def incoming_handler(event):
+        app = self.client
 
-            if not event.is_private:
-                return
+        @app.on_message(filters.private & filters.incoming)
+        async def handler(client, message):
 
-            user = await event.get_sender()
-
-            uid = user.id
-            text = event.raw_text.lower().strip()
+            uid = message.from_user.id
+            text = (message.text or "").lower().strip()
 
             if self.is_approved(uid):
                 return
@@ -94,71 +82,57 @@ class PMGuard:
                 self.ok_seen[uid] = False
 
                 try:
-                    await event.reply(
-                        file=WELCOME_PIC,
-                        message=WELCOME
+                    await message.reply_photo(
+                        WELCOME_PIC,
+                        caption=WELCOME
                     )
                 except:
-                    await event.reply(WELCOME)
+                    await message.reply_text(WELCOME)
 
                 return
 
-            if text == "ok" and not self.ok_seen.get(uid, False):
+            if text == "ok" and not self.ok_seen.get(uid):
 
                 self.ok_seen[uid] = True
-
-                await event.reply(OK_REPLY)
-
+                await message.reply_text(OK_REPLY)
                 return
 
-            if not self.ok_seen.get(uid, False):
+            if not self.ok_seen.get(uid):
                 return
 
-            count = self.msg_count.get(uid, 0) + 1
+            self.msg_count[uid] += 1
 
-            self.msg_count[uid] = count
-
-            if count <= MAX_MSG:
-
-                await event.reply(WARN_MSG.format(count))
-
+            if self.msg_count[uid] <= MAX_MSG:
+                await message.reply_text(WARN_MSG.format(self.msg_count[uid]))
                 return
 
             try:
-                await self.client(BlockRequest(uid))
+                await app.block_user(uid)
             except:
                 pass
 
-        @self.client.on(events.NewMessage(outgoing=True, pattern=r'^\.a$'))
-        async def approve_handler(event):
+        @app.on_message(filters.private & filters.outgoing & filters.regex(r"^\.a$"))
+        async def approve(client, message):
 
-            if not event.is_private:
-                return
-
-            uid = event.chat_id
+            uid = message.chat.id
 
             self.approved_users[str(uid)] = "permanent"
-
             self.save_approved()
 
             self.msg_count.pop(uid, None)
             self.ok_seen.pop(uid, None)
 
-            await event.reply("✅ Approved permanently")
+            await message.reply("✅ Approved permanently")
 
-        @self.client.on(events.NewMessage(outgoing=True, pattern=r'^\.disapp$'))
-        async def disapprove_handler(event):
+        @app.on_message(filters.private & filters.outgoing & filters.regex(r"^\.disapp$"))
+        async def disapprove(client, message):
 
-            if not event.is_private:
-                return
-
-            uid = event.chat_id
+            uid = message.chat.id
 
             self.approved_users.pop(str(uid), None)
-
             self.save_approved()
 
             self.msg_count.pop(uid, None)
             self.ok_seen.pop(uid, None)
 
-            await event.reply("❌ User disapproved")
+            await message.reply("❌ User disapproved")
