@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from Oneforall.plugins.clonedsessions.session_manager import start_session
+from Oneforall.plugins.clonedsessions.sessionmanager import start_session
 from Oneforall import app
 
 WAITING_FOR_SESSION = set()
