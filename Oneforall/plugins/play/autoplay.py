@@ -42,13 +42,13 @@ def askip_markup():
     )
 
 
-@app.on_message(filters.command("songconfig") & filters.group & ~BANNED_USERS)
+@app.on_message(filters.command("mconfig") & filters.group & ~BANNED_USERS)
 @languageCB
 async def songconfig_command(client, message, _):
 
     await message.reply_text(
-        "🎵 **ᴀᴜᴛᴏᴘʟᴀʏ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ**\n\n"
-        "sᴇʟᴇᴄᴛ ʏᴏᴜʀ ᴘʀᴇғᴇʀʀᴇᴅ ᴍᴏᴏᴅ:",
+        "<blockquote>🎵 **ᴀᴜᴛᴏᴘʟᴀʏ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ**\n\n"
+        "sᴇʟᴇᴄᴛ ʏᴏᴜʀ ᴘʀᴇғᴇʀʀᴇᴅ ᴍᴏᴏᴅ:</blockquote>",
         reply_markup=autoplay_mood_markup(),
     )
 
@@ -84,7 +84,7 @@ async def handle_mood_selection(client, CallbackQuery, _):
     )
 
     await CallbackQuery.message.reply_text(
-        "🌐 **sᴇʟᴇᴄᴛ ʏᴏᴜʀ ᴘʀᴇғᴇʀʀᴇᴅ ʟᴀɴɢᴜᴀɢᴇ:**",
+        "<blockquote>🌐 **sᴇʟᴇᴄᴛ ʏᴏᴜʀ ᴘʀᴇғᴇʀʀᴇᴅ ʟᴀɴɢᴜᴀɢᴇ:**</blockquote>",
         reply_markup=autoplay_language_markup(),
     )
 
@@ -127,14 +127,14 @@ async def handle_language_selection(client, CallbackQuery, _):
 
     # Dialogue box
     await CallbackQuery.answer(
-        f"✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}",
+        f"<blockquote>✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}</blockquote>",
         show_alert=True,
     )
 
     await CallbackQuery.message.reply_text(
-        "✅ **ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ**\n\n"
+        "<blockquote>✅ **ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ**\n\n"
         f"🎵 ᴍᴏᴏᴅ: `{mood.title()}`\n"
-        f"🌐 ʟᴀɴɢᴜᴀɢᴇ: `{language.title()}`"
+        f"🌐 ʟᴀɴɢᴜᴀɢᴇ: `{language.title()}`</blockquote>"
     )
 
 
@@ -219,7 +219,7 @@ async def process_autoplay_skip(chat_id, message):
 
     if not autoplay_status:
         return await message.reply_text(
-            "❌ **ᴀᴜᴛᴏᴘʟᴀʏ ɪs ɴᴏᴛ ᴇɴᴀʙʟᴇᴅ**"
+            "<blockquote>❌ **ᴀᴜᴛᴏᴘʟᴀʏ ɪs ɴᴏᴛ ᴇɴᴀʙʟᴇᴅ**</blockquote>"
         )
 
     try:
@@ -227,7 +227,7 @@ async def process_autoplay_skip(chat_id, message):
 
         if not track_data or not track_id:
             return await message.reply_text(
-                "❌ **ɴᴏ ɴᴇxᴛ ᴀᴜᴛᴏᴘʟᴀʏ sᴏɴɢ ғᴏᴜɴᴅ**"
+                "<blockquote>🦋 **ɴᴏ ɴᴇxᴛ ᴀᴜᴛᴏᴘʟᴀʏ sᴏɴɢ ғᴏᴜɴᴅ**</blockquote>"
             )
 
         title = track_data.get("title", "Unknown")
@@ -260,7 +260,7 @@ async def process_autoplay_skip(chat_id, message):
             print(f"Change Stream Error: {e}")
 
             return await message.reply_text(
-                "❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴄʜᴀɴɢᴇ sᴛʀᴇᴀᴍ**"
+                "<blockquote>😭 **ғᴀɪʟᴇᴅ ᴛᴏ ᴄʜᴀɴɢᴇ sᴛʀᴇᴀᴍ**"
             )
 
         try:
