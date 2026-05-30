@@ -249,6 +249,7 @@ def create_spotify_thumbnail_with_image(thumbnail_bytes, title, duration, mood="
 def save_image_to_bytes(image):
     """
     Convert PIL Image to bytes for sending to Telegram
+    Uses PNG format with proper filename for Pyrogram
     
     Args:
         image (PIL.Image): The image to convert
@@ -263,6 +264,8 @@ def save_image_to_bytes(image):
         img_bytes = io.BytesIO()
         image.save(img_bytes, format='PNG', quality=95)
         img_bytes.seek(0)
+        # Add filename attribute for Pyrogram to recognize it properly
+        img_bytes.name = "autoplay_thumbnail.png"
         return img_bytes
     except Exception as e:
         print(f"Image Save Error: {e}")
