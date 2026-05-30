@@ -359,53 +359,73 @@ async def autoplay_queue_command(client, message, _):
 @app.on_callback_query(filters.regex("^aqueue\\|"))
 @languageCB
 async def autoplay_queue_callback(client, CallbackQuery, _):
-    """Show queue from button - FIXED to avoid message too long error"""
-    
+    """Show autoplay queue"""
+
     chat_id = int(CallbackQuery.data.split("|")[1])
-    
+
     autoplay_status = await is_autoplay_on(chat_id)
-    
+
     if not autoplay_status:
         return await CallbackQuery.answer(
             "❌ ᴀᴜᴛᴏᴘʟᴀʏ ᴅɪsᴀʙʟᴇᴅ",
             show_alert=True,
         )
-    
+
     if chat_id not in previous_tracks or not previous_tracks[chat_id]:
         return await CallbackQuery.answer(
             "📭 qᴜᴇᴜᴇ ᴇᴍᴘᴛʏ",
             show_alert=True,
         )
-    
-    # Build queue text with character limit (max 4096 for callback, but we use 3500 to be safe)
-    queue_text = "📋 **ᴀᴜᴛᴏᴘʟᴀʏ Qᴜᴇᴜᴇ**\n"
-    
+
+    queue_text = "📋 **ᴀᴜᴛᴏᴘʟᴀʏ qᴜᴇᴜᴇ**\n\n"
+
     if chat_id in current_autoplay_track:
         current = current_autoplay_track[chat_id]
-        queue_text += f"▶️ {current.get('title', 'Unknown')[:40]}\n"
-    
-    queue_text += "\n**ᴜᴘᴄᴏᴍɪɴɢ:**\n"
-    
-    char_count = len(queue_text)
-    track_count = 0
-    
-    # Add tracks until we hit character limit
-    for idx, track in enumerate(previous_tracks[chat_id], 1):
-        title = track.get("title", "Unknown")[:40]
-        line = f"{idx}. {title}\n"
-        
-        if char_count + len(line) > 3500:
-            remaining = len(previous_tracks[chat_id]) - idx
-            if remaining > 0:
-                queue_text += f"\n... ᴀɴᴅ {remaining} ᴍᴏʀᴇ"
-            break
-        
-        queue_text += line
-        char_count += len(line)
-        track_count += 1
-    
-    await CallbackQuery.answer(queue_text, show_alert=True)
+        queue_text += (
+            f"▶️ **ɴᴏᴡ ᴘʟᴀʏɪɴɢ**\n"
+            f"{current.get('title', 'Unknown')[:60]}\n\n"
+        )
 
+    queue_text += "**ᴜᴘᴄᴏᴍɪɴɢ ᴛʀᴀᴄᴋs:**\n\n"
+
+    shown = 0
+
+    for idx, track in enumerate(previous_tracks[chat_id], start=1):
+
+        title = track.get("title", "Unknown")
+
+        if len(title) > 60:
+            title = title[:57] + "..."
+
+        line = f"`{idx}.` {title}\n"
+
+        if len(queue_text + line) > 3500:
+            remaining = len(previous_tracks[chat_id]) - shown
+
+            if remaining > 0:
+                queue_text += (
+                    f"\n➕ **{remaining} ᴍᴏʀᴇ ᴛʀᴀᴄᴋs ɴᴏᴛ sʜᴏᴡɴ**"
+                )
+            break
+
+        queue_text += line
+        shown += 1
+
+    try:
+        await CallbackQuery.message.edit_text(
+            queue_text,
+            disable_web_page_preview=True,
+        )
+
+        await CallbackQuery.answer()
+
+    except Exception as e:
+        print(f"Queue Error: {e}")
+
+        await CallbackQuery.answer(
+            "❌ ғᴀɪʟᴇᴅ ᴛᴏ sʜᴏᴡ qᴜᴇᴜᴇ",
+            show_alert=True,
+        )
 
 @app.on_callback_query(filters.regex("^aprogress_show\\|"))
 @languageCB
