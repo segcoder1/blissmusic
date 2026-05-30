@@ -174,7 +174,7 @@ async def handle_language_selection(client, CallbackQuery, _):
 
     # Dialogue box
     await CallbackQuery.answer(
-        f"<blockquote>✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}</blockquote>",
+        f"<✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}",
         show_alert=True,
     )
 
