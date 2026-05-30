@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import textwrap
 
 
-def create_spotify_thumbnail_with_yt_image(thumbnail_url, title, duration_str, current_sec=0, total_sec=0, mood="chill"):
+def create_spotify_thumbnail_with_yt_image(thumbnail_url, title, duration_str, current_sec=0, total_sec=0, mood="chill", artist=""):
     """
     Create a Spotify-styled thumbnail with YouTube album art and animated progress bar
     
