@@ -40,31 +40,53 @@ progress_messages = {}
 update_tasks = {}
 
 
-def askip_markup(chat_id=None, current_sec=0, total_sec=0):
-    return InlineKeyboardMarkup(
+def create_progress_bar(current_sec, total_sec, bar_length=10):
+    """Create a visual progress bar using emojis"""
+    if total_sec == 0:
+        return "▬" * bar_length
+    
+    percentage = current_sec / total_sec
+    filled = int(bar_length * percentage)
+    empty = bar_length - filled
+    
+    return "🟩" * filled + "⬜" * empty
+
+
+def get_progress_buttons(chat_id, current_sec, total_sec):
+    """Get progress bar as inline buttons with time stamps"""
+    
+    # Create visual progress bar
+    progress_bar = create_progress_bar(current_sec, total_sec, 10)
+    
+    buttons = [
         [
-            [
-                InlineKeyboardButton(
-                    "⏮ 0:00" if not chat_id else f"⏮ {format_time(current_sec)}/{format_time(total_sec)}",
-                    callback_data=f"aprogress|{chat_id}",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "⏭ sᴋɪᴘ",
-                    callback_data="askip",
-                ),
-                InlineKeyboardButton(
-                    "📋 Qᴜᴇᴜᴇ",
-                    callback_data=f"aqueue|{chat_id}",
-                ),
-                InlineKeyboardButton(
-                    "ᴄʟᴏsᴇ",
-                    callback_data="close",
-                ),
-            ]
+            InlineKeyboardButton(
+                f"{format_time(current_sec)} {progress_bar} {format_time(total_sec)}",
+                callback_data=f"aprogress_show|{chat_id}",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "⏭ sᴋɪᴘ",
+                callback_data="askip",
+            ),
+            InlineKeyboardButton(
+                "📋 Qᴜᴇᴜᴇ",
+                callback_data=f"aqueue|{chat_id}",
+            ),
+            InlineKeyboardButton(
+                "ᴄʟᴏsᴇ",
+                callback_data="close",
+            ),
         ]
-    )
+    ]
+    
+    return InlineKeyboardMarkup(buttons)
+
+
+def askip_markup(chat_id=None, current_sec=0, total_sec=0):
+    """Initial markup with progress bar"""
+    return get_progress_buttons(chat_id, current_sec, total_sec)
 
 
 @app.on_message(filters.command("mconfig") & filters.group & ~BANNED_USERS)
@@ -382,7 +404,7 @@ async def autoplay_queue_callback(client, CallbackQuery, _):
     await CallbackQuery.answer(queue_text, show_alert=True)
 
 
-@app.on_callback_query(filters.regex("^aprogress\\|"))
+@app.on_callback_query(filters.regex("^aprogress_show\\|"))
 @languageCB
 async def autoplay_progress_callback(client, CallbackQuery, _):
     """Progress bar button - shows current time"""
@@ -402,8 +424,8 @@ async def autoplay_progress_callback(client, CallbackQuery, _):
         await CallbackQuery.answer("❌ ɴᴏ sᴏɴɢ ᴘʟᴀʏɪɴɢ", show_alert=False)
 
 
-async def update_progress_bar(chat_id, message_id, total_duration, title, duration_str, thumbnail_url, mood, artist=""):
-    """Update progress bar every 2 seconds with new image"""
+async def update_progress_buttons(chat_id, message_id, total_duration, title, duration_str, thumbnail_url, mood, artist=""):
+    """Update progress bar buttons and image every 1 second"""
     
     try:
         if chat_id not in current_autoplay_track:
@@ -421,10 +443,13 @@ async def update_progress_bar(chat_id, message_id, total_duration, title, durati
             # Update track info
             current_autoplay_track[chat_id]["current_sec"] = elapsed
             
-            # Update message every 2 seconds
-            if elapsed - last_update >= 2:
+            # Update message every 1 second (for smooth progress bar)
+            if elapsed - last_update >= 1:
                 try:
                     if chat_id in progress_messages and message_id == progress_messages[chat_id]:
+                        # Update buttons with new progress bar
+                        new_markup = get_progress_buttons(chat_id, elapsed, total_duration)
+                        
                         # Generate new thumbnail with updated progress
                         spotify_img = create_spotify_thumbnail_with_yt_image(
                             thumbnail_url,
@@ -439,17 +464,30 @@ async def update_progress_bar(chat_id, message_id, total_duration, title, durati
                         if spotify_img:
                             img_bytes = save_image_to_bytes(spotify_img)
                             
-                            await app.edit_message_media(
+                            try:
+                                await app.edit_message_media(
+                                    chat_id=chat_id,
+                                    message_id=message_id,
+                                    media=await app.prepare_file(img_bytes)
+                                )
+                            except:
+                                pass
+                        
+                        # Update buttons separately
+                        try:
+                            await app.edit_message_reply_markup(
                                 chat_id=chat_id,
                                 message_id=message_id,
-                                media=await app.prepare_file(img_bytes)
+                                reply_markup=new_markup
                             )
-                            
-                            last_update = elapsed
+                        except:
+                            pass
+                        
+                        last_update = elapsed
                 except Exception as e:
-                    print(f"Progress Bar Update Error: {e}")
+                    print(f"Progress Update Error: {e}")
             
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
     
     except Exception as e:
         print(f"Progress Update Task Error: {e}")
@@ -579,7 +617,7 @@ async def process_autoplay_skip(chat_id, message):
             
             # Start progress bar update task
             update_tasks[chat_id] = asyncio.create_task(
-                update_progress_bar(chat_id, sent_message.id, duration_sec, title, duration_str, thumbnail_url, mood, artist)
+                update_progress_buttons(chat_id, sent_message.id, duration_sec, title, duration_str, thumbnail_url, mood, artist)
             )
 
         except Exception as e:
@@ -589,7 +627,7 @@ async def process_autoplay_skip(chat_id, message):
         print(f"Askip Error: {e}")
 
         return await message.reply_text(
-            "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ sᴋɪᴘ ᴀᴜᴛᴏᴘʟᴀʏ sᴏɴɢ**</blockquote>"
+            "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ sᴋɪᴘ ᴀᴜ���ᴏᴘʟᴀʏ sᴏɴɢ**</blockquote>"
         )
 
 
