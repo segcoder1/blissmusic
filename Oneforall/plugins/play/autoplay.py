@@ -40,16 +40,19 @@ progress_messages = {}
 update_tasks = {}
 
 
-def create_progress_bar(current_sec, total_sec, bar_length=10):
-    """Create a visual progress bar using emojis"""
-    if total_sec == 0:
+def create_progress_bar(current_sec, total_sec, bar_length=12):
+    if not total_sec:
         return "▬" * bar_length
-    
-    percentage = current_sec / total_sec
-    filled = int(bar_length * percentage)
-    empty = bar_length - filled
-    
-    return "🟩" * filled + "⬜" * empty
+
+    percentage = min(current_sec / total_sec, 1)
+
+    filled = round(bar_length * percentage)
+
+    return (
+        "━" * filled +
+        "◉" +
+        "━" * max(0, bar_length - filled - 1)
+    )
 
 
 def get_progress_buttons(chat_id, current_sec, total_sec):
