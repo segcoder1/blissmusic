@@ -22,6 +22,11 @@ from Oneforall.utils.inline import (
     autoplay_mood_markup,
     autoplay_language_markup,
 )
+from Oneforall.utils.spotify_image import (
+    create_spotify_thumbnail_simple,
+    create_spotify_thumbnail_with_image,
+    save_image_to_bytes,
+)
 
 # Store previous tracks per chat
 previous_tracks = {}
@@ -293,7 +298,6 @@ async def autoplay_seek_command(client, message, _):
         
         if chat_id in current_autoplay_track:
             track_info = current_autoplay_track[chat_id]
-            # Seek in the stream (implementation depends on Hotty)
             await Hotty.seek_stream(chat_id, total_seconds)
             
             await message.reply_text(
@@ -401,7 +405,7 @@ async def autoplay_queue_callback(client, CallbackQuery, _):
 @app.on_callback_query(filters.regex("^aprogress\\|"))
 @languageCB
 async def autoplay_progress_callback(client, CallbackQuery, _):
-    """Progress bar button - just shows current time"""
+    """Progress bar button - shows current time"""
     
     chat_id = int(CallbackQuery.data.split("|")[1])
     
@@ -418,7 +422,7 @@ async def autoplay_progress_callback(client, CallbackQuery, _):
         await CallbackQuery.answer("❌ ɴᴏ sᴏɴɢ ᴘʟᴀʏɪɴɢ", show_alert=False)
 
 
-async def update_progress_bar(chat_id, message_id, total_duration):
+async def update_progress_bar(chat_id, message_id, total_duration, title, duration_str, mood):
     """Update progress bar every second"""
     
     try:
@@ -443,14 +447,11 @@ async def update_progress_bar(chat_id, message_id, total_duration):
                 if chat_id in progress_messages and message_id == progress_messages[chat_id]:
                     progress_bar = get_progress_bar(elapsed, int(total_duration), 15)
                     
-                    title = track.get("title", "Unknown")
-                    duration = track.get("duration", "00:00")
-                    
                     new_caption = (
                         "<blockquote>⚙️ **𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴏɴɢ ✮**</blockquote>\n\n"
                         f"<blockquote>🦋 **𝐍๏Ꮗ 𝐏ʟᴀʏɪɴɢ:** {title[:40]}\n"
                         f"{progress_bar}\n"
-                        f"🕐 **{format_time(elapsed)} / {duration}**</blockquote>\n"
+                        f"🕐 **{format_time(elapsed)} / {duration_str}**</blockquote>\n"
                         f"<blockquote><b>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></b></blockquote>"
                     )
                     
@@ -532,18 +533,42 @@ async def process_autoplay_skip(chat_id, message):
             )
 
         try:
-
-            sent_message = await app.send_photo(
-                chat_id=chat_id,
-                photo=thumbnail if thumbnail else config.YOUTUBE_IMG_URL,
-                caption=(
-                    "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴋɩᴘᴘ𝛆ɗ ✮**</blockquote>\n\n"
-                    f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
-                    f"🕐 **𝐃ʋɽɑʈɩσŋ :** {duration_str}</blockquote>\n"
-                    f"<blockquote><b>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></b></blockquote>"
-                ),
-                reply_markup=askip_markup(chat_id, 0, duration_sec),
-            )
+            # Get mood for Spotify thumbnail
+            mood_data = await get_autoplay_mood(chat_id)
+            mood = "chill"
+            if isinstance(mood_data, dict):
+                mood = mood_data.get("mood", "chill")
+            
+            # Generate Spotify-styled thumbnail
+            spotify_img = create_spotify_thumbnail_simple(title, duration_str, mood)
+            
+            if spotify_img:
+                img_bytes = save_image_to_bytes(spotify_img)
+                
+                sent_message = await app.send_photo(
+                    chat_id=chat_id,
+                    photo=img_bytes,
+                    caption=(
+                        "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴋɩᴘᴘ𝛆ɗ ✮**</blockquote>\n\n"
+                        f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
+                        f"🕐 **𝐃ʋɽɑʈɩσŋ :** {duration_str}</blockquote>\n"
+                        f"<blockquote><b>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></b></blockquote>"
+                    ),
+                    reply_markup=askip_markup(chat_id, 0, duration_sec),
+                )
+            else:
+                # Fallback to original thumbnail
+                sent_message = await app.send_photo(
+                    chat_id=chat_id,
+                    photo=thumbnail if thumbnail else config.YOUTUBE_IMG_URL,
+                    caption=(
+                        "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴋɩᴘᴘ𝛆ɗ ✮**</blockquote>\n\n"
+                        f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
+                        f"🕐 **𝐃ʋɽɑʈɩσŋ :** {duration_str}</blockquote>\n"
+                        f"<blockquote><b>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></b></blockquote>"
+                    ),
+                    reply_markup=askip_markup(chat_id, 0, duration_sec),
+                )
 
             # Store current track info
             current_autoplay_track[chat_id] = {
@@ -562,7 +587,7 @@ async def process_autoplay_skip(chat_id, message):
             
             # Start progress bar update task
             update_tasks[chat_id] = asyncio.create_task(
-                update_progress_bar(chat_id, sent_message.id, duration_sec)
+                update_progress_bar(chat_id, sent_message.id, duration_sec, title, duration_str, mood)
             )
 
         except Exception as e:
@@ -627,4 +652,4 @@ async def get_autoplay_recommendation(chat_id: int):
             continue
 
     return None, None
-        
+    
