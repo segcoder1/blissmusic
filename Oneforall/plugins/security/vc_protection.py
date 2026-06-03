@@ -3,10 +3,9 @@ from pyrogram.enums import ChatMemberStatus
 from datetime import datetime, timedelta
 
 try:
-    from Oneforall import app, userbot
+    from Oneforall import app
     from config import OWNER_ID
     from Oneforall.misc import SUDOERS
-    from Oneforall.core.userbot import assistantids
 except ImportError as e:
     raise ImportError(f"Could not import: {e}")
 
@@ -50,6 +49,8 @@ vc_protection_mgr = VCProtectionManager()
 def get_assistant_client():
     """Get the first available assistant client from userbot."""
     try:
+        from Oneforall import userbot
+        
         if hasattr(userbot, 'one') and userbot.one:
             return userbot.one
         elif hasattr(userbot, 'two') and userbot.two:
@@ -60,8 +61,8 @@ def get_assistant_client():
             return userbot.four
         elif hasattr(userbot, 'five') and userbot.five:
             return userbot.five
-    except:
-        pass
+    except Exception as e:
+        print(f"[VCProtection] Error getting assistant: {e}")
     return None
 
 
@@ -71,11 +72,14 @@ async def handle_joinvc_command(client, message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     
+    print(f"[VCProtection] /joinvc command received from {user_id} in chat {chat_id}")
+    
     try:
         member = await client.get_chat_member(chat_id, user_id)
         is_admin = member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    except:
-        await message.reply_text("❌ Could not verify your permissions.")
+    except Exception as e:
+        print(f"[VCProtection] Error checking member: {e}")
+        await message.reply_text(f"❌ Error: {str(e)}")
         return
     
     is_owner_or_sudo = user_id == OWNER_ID or user_id in SUDOERS
@@ -87,9 +91,11 @@ async def handle_joinvc_command(client, message):
     assistant_client = get_assistant_client()
     if not assistant_client:
         await message.reply_text("❌ No assistant account available. Configure STRING1-STRING5 in config.")
+        print("[VCProtection] No assistant client found")
         return
     
     try:
+        print(f"[VCProtection] Attempting to join voice chat with assistant...")
         await assistant_client.join_voice_chat(chat_id)
         vc_protection_mgr.mark_vc_active(chat_id)
         
@@ -105,10 +111,11 @@ async def handle_joinvc_command(client, message):
             f"👤 **Assistant:** `{assistant_name}`\n"
             f"🔒 **VC Protection ACTIVE**"
         )
-        print(f"[VCProtection] Assistant joined VC in chat {chat_id}")
+        print(f"[VCProtection] Assistant successfully joined VC in chat {chat_id}")
     except Exception as e:
-        await message.reply_text(f"❌ Error: {str(e)}")
-        print(f"[VCProtection] Failed to join VC: {e}")
+        error_msg = str(e)
+        print(f"[VCProtection] Failed to join VC: {error_msg}")
+        await message.reply_text(f"❌ Error joining VC: {error_msg}")
 
 
 @app.on_message(filters.command("leavevc") & filters.group)
@@ -117,11 +124,14 @@ async def handle_leavevc_command(client, message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     
+    print(f"[VCProtection] /leavevc command received from {user_id} in chat {chat_id}")
+    
     try:
         member = await client.get_chat_member(chat_id, user_id)
         is_admin = member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    except:
-        await message.reply_text("❌ Could not verify your permissions.")
+    except Exception as e:
+        print(f"[VCProtection] Error checking member: {e}")
+        await message.reply_text(f"❌ Error: {str(e)}")
         return
     
     is_owner_or_sudo = user_id == OWNER_ID or user_id in SUDOERS
@@ -136,13 +146,15 @@ async def handle_leavevc_command(client, message):
         return
     
     try:
+        print(f"[VCProtection] Attempting to leave voice chat...")
         await assistant_client.leave_voice_chat(chat_id)
         vc_protection_mgr.mark_vc_inactive(chat_id)
         await message.reply_text("✅ **Assistant Left Voice Chat**")
         print(f"[VCProtection] Assistant left VC in chat {chat_id}")
     except Exception as e:
-        await message.reply_text(f"❌ Error: {str(e)}")
-        print(f"[VCProtection] Failed to leave VC: {e}")
+        error_msg = str(e)
+        print(f"[VCProtection] Failed to leave VC: {error_msg}")
+        await message.reply_text(f"❌ Error leaving VC: {error_msg}")
 
 
 @app.on_message(filters.command("vcprotect") & filters.group)
@@ -151,11 +163,14 @@ async def handle_vcprotect_command(client, message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     
+    print(f"[VCProtection] /vcprotect command received from {user_id} in chat {chat_id}")
+    
     try:
         member = await client.get_chat_member(chat_id, user_id)
         is_admin = member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    except:
-        await message.reply_text("❌ Could not verify your permissions.")
+    except Exception as e:
+        print(f"[VCProtection] Error checking member: {e}")
+        await message.reply_text(f"❌ Error: {str(e)}")
         return
     
     is_owner_or_sudo = user_id == OWNER_ID or user_id in SUDOERS
@@ -179,37 +194,7 @@ async def handle_vcprotect_command(client, message):
     )
     
     await message.reply_text(response)
-    print(f"[VCProtection] /vcprotect command used by {user_id} in chat {chat_id}")
+    print(f"[VCProtection] Sent vcprotect info to user {user_id}")
 
 
-@app.on_message(filters.command("setpunishment"))
-async def handle_setpunishment_command(client, message):
-    """Command: /setpunishment <limit> <action>"""
-    chat_id = message.chat.id
-    user_id = message.from_user.id
-    
-    try:
-        member = await client.get_chat_member(chat_id, user_id)
-        is_admin = member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    except:
-        return
-    
-    if not is_admin and user_id != OWNER_ID and user_id not in SUDOERS:
-        return
-    
-    args = message.text.split()
-    if len(args) < 3:
-        current = vc_protection_mgr.get_punishment_setting(chat_id)
-        await message.reply_text(f"Current: Limit={current['warn_limit']}, Action={current['action']}")
-        return
-    
-    try:
-        limit = int(args[1])
-        action = args[2].lower()
-        vc_protection_mgr.set_punishment_setting(chat_id, warn_limit=limit, action=action)
-        await message.reply_text(f"✅ Settings updated: {limit} warns → {action}")
-    except:
-        await message.reply_text("❌ Invalid format")
-
-
-print("[VCProtection] Module loaded!")
+print("[VCProtection] Module loaded successfully!")
