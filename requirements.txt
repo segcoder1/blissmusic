@@ -47,3 +47,10 @@ gpytranslate
 
 kurigram
 py-yt-search==0.6.2
+
+#antiabuse
+SpeechRecognition>=3.10.0
+pydub>=0.25.1
+detoxify>=0.5.0
+librosa>=0.10.0
+numpy>=1.21.0
