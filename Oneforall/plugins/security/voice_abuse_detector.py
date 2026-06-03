@@ -98,7 +98,7 @@ class VoiceAbuseDetector:
                 text = self.recognizer.recognize_google(audio)
                 print(f"[VoiceAbuse] Transcribed: {text}")
                 return text
-            except sr.UnknownValueError:
+            except sr.UnknownValueValue:
                 return None
             except sr.RequestError as e:
                 print(f"[VoiceAbuse] API error: {e}")
@@ -138,7 +138,7 @@ class VoiceAbuseDetector:
 
 voice_abuse_detector = VoiceAbuseDetector()
 
-@app.on_message(filters.command("voiceabuse"))
+@app.on_message(filters.command("voiceabuse") & filters.group)
 async def handle_voiceabuse_command(client, message):
     """Command: /voiceabuse - Show voice abuse detection status."""
     chat_id = message.chat.id
@@ -148,11 +148,12 @@ async def handle_voiceabuse_command(client, message):
         member = await client.get_chat_member(chat_id, user_id)
         is_admin = member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
     except:
+        await message.reply_text("❌ Could not verify your permissions.")
         return
     
     is_owner_or_sudo = user_id == OWNER_ID or user_id in SUDOERS
     if not (is_admin or is_owner_or_sudo):
-        await message.reply_text("❌ Only admins can use this.")
+        await message.reply_text("❌ Only admins can use this command.")
         return
     
     settings = voice_abuse_detector.get_settings(chat_id)
@@ -162,8 +163,55 @@ async def handle_voiceabuse_command(client, message):
         f"🎤 **Voice Abuse Detection**\n\n"
         f"Status: {status}\n"
         f"Threshold: {settings['threshold']}\n"
-        f"Action: {settings['action'].upper()}"
+        f"Action: {settings['action'].upper()}\n"
+        f"Warn Limit: {settings['warn_limit']}\n"
+        f"Mute Duration: {settings['mute_duration']}s"
     )
+
+
+@app.on_message(filters.command("setvoiceabuse") & filters.group)
+async def handle_setvoiceabuse_command(client, message):
+    """Command: /setvoiceabuse <enabled|disabled|threshold|action> <value>"""
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    
+    try:
+        member = await client.get_chat_member(chat_id, user_id)
+        is_admin = member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    except:
+        await message.reply_text("❌ Could not verify your permissions.")
+        return
+    
+    is_owner_or_sudo = user_id == OWNER_ID or user_id in SUDOERS
+    if not (is_admin or is_owner_or_sudo):
+        await message.reply_text("❌ Only admins can use this command.")
+        return
+    
+    args = message.text.split()
+    if len(args) < 2:
+        await message.reply_text("Usage: `/setvoiceabuse <enabled|disabled|threshold|action> <value>`")
+        return
+    
+    try:
+        setting = args[1].lower()
+        if setting == "enabled" and len(args) > 2:
+            voice_abuse_detector.set_settings(chat_id, enabled=args[2].lower() == "true")
+            await message.reply_text("✅ Voice abuse detection updated.")
+        elif setting == "threshold" and len(args) > 2:
+            threshold = float(args[2])
+            voice_abuse_detector.set_settings(chat_id, threshold=threshold)
+            await message.reply_text(f"✅ Threshold set to {threshold}")
+        elif setting == "action" and len(args) > 2:
+            action = args[2].lower()
+            if action in ['warn', 'mute', 'ban']:
+                voice_abuse_detector.set_settings(chat_id, action=action)
+                await message.reply_text(f"✅ Action set to {action}")
+            else:
+                await message.reply_text("❌ Invalid action. Use: warn, mute, ban")
+        else:
+            await message.reply_text("❌ Invalid setting.")
+    except Exception as e:
+        await message.reply_text(f"❌ Error: {str(e)}")
 
 
 print("[VoiceAbuse] Module loaded!")
