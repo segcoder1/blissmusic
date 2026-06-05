@@ -1,10 +1,13 @@
 """
 Channel Detection System with Logging
 Detects participants joined via channel and logs everything to a designated channel
+Uses get_assistant() to connect via voice chat and monitor participants
 """
 
 from pyrogram import Client
 from pyrogram.types import Chat, User, ChatMember
+from pytgcalls import PyTgCalls
+from pytgcalls.types import MediaStream, AudioQuality
 from typing import List, Dict, Optional
 from datetime import datetime
 import logging
@@ -13,17 +16,51 @@ logger = logging.getLogger(__name__)
 
 
 class ChannelDetector:
-    def __init__(self, assistant: Client, log_channel_id: int = None):
+    def __init__(self, assistant_client: Client, pytgcalls_client: PyTgCalls = None, log_channel_id: int = None):
         """
-        Initialize with assistant client from config string session
+        Initialize with assistant client from get_assistant()
         
         Args:
-            assistant: Client instance initialized with STRING_SESSION from config
+            assistant_client: Client instance from get_assistant() - the userbot instance
+            pytgcalls_client: PyTgCalls instance for voice chat operations (optional)
             log_channel_id: Channel ID where logs will be sent (from config)
         """
-        self.assistant = assistant
+        self.assistant = assistant_client
+        self.pytgcalls = pytgcalls_client
         self.log_channel_id = log_channel_id
         self.cache = {}
+        self.assistant_id = None
+        self.assistant_username = None
+        self.voice_chat_active = {}  # Track which chats have active voice monitoring
+    
+    async def get_assistant_info(self) -> Dict:
+        """
+        Get the assistant bot's information (ID, username, name)
+        
+        Returns:
+            Dictionary with assistant info
+        """
+        if self.assistant_id:
+            return {
+                "id": self.assistant_id,
+                "username": self.assistant_username
+            }
+        
+        try:
+            me = await self.assistant.get_me()
+            self.assistant_id = me.id
+            self.assistant_username = me.username
+            logger.info(f"Assistant bot: @{me.username} (ID: {me.id})")
+            
+            return {
+                "id": me.id,
+                "username": me.username,
+                "first_name": me.first_name,
+                "is_bot": me.is_bot
+            }
+        except Exception as e:
+            logger.error(f"Error getting assistant info: {e}")
+            return None
     
     async def send_log(self, message: str, log_type: str = "INFO"):
         """
@@ -38,7 +75,6 @@ class ChannelDetector:
             return
         
         try:
-            # Create formatted log message
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_text = f"📊 **[{log_type}]** `{timestamp}`\n\n{message}"
             
@@ -50,6 +86,85 @@ class ChannelDetector:
             
         except Exception as e:
             logger.error(f"Error sending log to channel: {e}")
+    
+    async def join_voice_chat(self, chat_id: int) -> bool:
+        """
+        Make assistant join voice chat to monitor participants
+        
+        Args:
+            chat_id: The chat ID to join voice chat
+            
+        Returns:
+            True if joined successfully, False otherwise
+        """
+        if not self.pytgcalls:
+            logger.error("PyTgCalls not initialized")
+            return False
+        
+        try:
+            # Create a silent dummy stream for monitoring
+            stream = MediaStream(
+                "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                audio_parameters=AudioQuality.LOW,
+                video_flags=MediaStream.IGNORE,
+            )
+            
+            await self.pytgcalls.join_group_call(chat_id, stream)
+            self.voice_chat_active[chat_id] = True
+            logger.info(f"Assistant joined voice chat in {chat_id}")
+            
+            await self.send_log(
+                f"🎤 Assistant joined voice chat\nChat ID: `{chat_id}`",
+                "INFO"
+            )
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error joining voice chat: {e}")
+            await self.send_log(f"❌ Failed to join voice chat: {str(e)}", "ERROR")
+            return False
+    
+    async def leave_voice_chat(self, chat_id: int) -> bool:
+        """
+        Make assistant leave voice chat
+        
+        Args:
+            chat_id: The chat ID to leave voice chat from
+            
+        Returns:
+            True if left successfully, False otherwise
+        """
+        if not self.pytgcalls:
+            return False
+        
+        try:
+            await self.pytgcalls.leave_group_call(chat_id)
+            self.voice_chat_active[chat_id] = False
+            logger.info(f"Assistant left voice chat in {chat_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error leaving voice chat: {e}")
+            return False
+    
+    async def get_voice_chat_participants(self, chat_id: int) -> List[ChatMember]:
+        """
+        Get all participants currently in voice chat
+        
+        Args:
+            chat_id: The chat ID
+            
+        Returns:
+            List of ChatMember objects in voice chat
+        """
+        try:
+            participants = []
+            async for member in self.assistant.get_chat_members(chat_id):
+                participants.append(member)
+            return participants
+        except Exception as e:
+            logger.error(f"Error getting voice chat participants for {chat_id}: {e}")
+            return []
     
     async def get_channel_owner(self, chat_id: int) -> Optional[User]:
         """Get channel/group owner information"""
@@ -67,9 +182,8 @@ class ChannelDetector:
                 return owner
             
             async for admin in self.assistant.get_chat_members(chat_id, filter="administrators"):
-                if admin.status in ["creator", "administrator"]:
-                    if admin.privileges and admin.privileges.is_admin:
-                        return admin.user
+                if admin.status in ["creator"]:
+                    return admin.user
             
             return None
             
@@ -81,6 +195,7 @@ class ChannelDetector:
     async def detect_channel_joined_participants(self, chat_id: int, send_log: bool = True) -> Dict:
         """
         Detect which participants joined via channel
+        Assistant must be in voice chat for accurate detection
         
         Args:
             chat_id: The chat/channel ID to monitor
@@ -90,6 +205,10 @@ class ChannelDetector:
             Dictionary containing participant and channel information
         """
         try:
+            # Get assistant info if not cached
+            if not self.assistant_id:
+                await self.get_assistant_info()
+            
             chat: Chat = await self.assistant.get_chat(chat_id)
             
             # Get channel owner
@@ -110,6 +229,7 @@ class ChannelDetector:
                     "joined_via": joined_via,
                     "join_date": member.joined_date if hasattr(member, 'joined_date') else None,
                     "is_bot": member.user.is_bot,
+                    "is_assistant": member.user.id == self.assistant_id,
                     "status": member.status,
                 })
             
@@ -122,10 +242,14 @@ class ChannelDetector:
                 "owner": owner,
                 "owner_id": owner_id,
                 "owner_username": owner.username if owner else None,
+                "assistant_id": self.assistant_id,
+                "assistant_username": self.assistant_username,
+                "assistant_in_vc": self.voice_chat_active.get(chat_id, False),
                 "total_members": chat.members_count if hasattr(chat, 'members_count') else len(participants_list),
                 "total_participants": len(participants_list),
                 "participants": participants_list,
                 "channel_joined_count": sum(1 for p in participants_list if p["joined_via"] == "channel"),
+                "is_assistant_present": any(p["is_assistant"] for p in participants_list),
             }
             
             # Send detection log
@@ -154,9 +278,10 @@ class ChannelDetector:
                 await self.send_log(log_text, "ERROR")
                 return
             
-            # Build detailed log
             owner_info = f"👤 {detection_result['owner_username'] or detection_result['owner_id']}" if detection_result['owner'] else "❌ Unknown"
             chat_type = "📢 Channel" if detection_result['is_channel'] else "👥 Group"
+            assistant_status = "✅ In VC" if detection_result['is_assistant_present'] else "❌ Not in VC"
+            vc_status = "🎤 Active" if detection_result['assistant_in_vc'] else "🔇 Inactive"
             
             log_text = f"""
 🔍 **Channel Detection Report**
@@ -165,6 +290,11 @@ class ChannelDetector:
 📌 Title: `{detection_result['chat_title']}`
 🆔 Chat ID: `{detection_result['chat_id']}`
 👑 Owner: {owner_info}
+
+🤖 **Assistant Status**
+├─ Bot: @{detection_result['assistant_username']} (ID: `{detection_result['assistant_id']}`)
+├─ In Voice Chat: {assistant_status}
+└─ Voice Chat: {vc_status}
 
 📊 **Statistics**
 ├─ Total Members: `{detection_result['total_members']}`
@@ -188,17 +318,25 @@ class ChannelDetector:
     async def _send_participants_log(self, participants: List[Dict]):
         """Send detailed participants list"""
         try:
-            # Group by join source
             channel_joined = [p for p in participants if p["joined_via"] == "channel"]
             direct_joined = [p for p in participants if p["joined_via"] == "direct"]
             bots = [p for p in participants if p["is_bot"]]
+            assistants = [p for p in participants if p["is_assistant"]]
             
             log_text = "👥 **Participants Details**\n\n"
+            
+            # Assistant
+            if assistants:
+                log_text += f"**🤖 Assistant Bot**\n"
+                for p in assistants:
+                    username = f"@{p['username']}" if p['username'] else f"`{p['user_id']}`"
+                    log_text += f"🎵 {username} (ID: `{p['user_id']}`)\n"
+                log_text += "\n"
             
             # Channel joined participants
             if channel_joined:
                 log_text += f"**📊 Joined via Channel ({len(channel_joined)})**\n"
-                for p in channel_joined[:20]:  # Limit to 20
+                for p in channel_joined[:20]:
                     username = f"@{p['username']}" if p['username'] else f"`{p['user_id']}`"
                     status_emoji = "👤" if not p['is_bot'] else "🤖"
                     log_text += f"{status_emoji} {username}\n"
@@ -216,10 +354,11 @@ class ChannelDetector:
                     log_text += f"... and `{len(direct_joined) - 10}` more\n"
                 log_text += "\n"
             
-            # Bots
-            if bots:
-                log_text += f"**🤖 Bots ({len(bots)})**\n"
-                for p in bots:
+            # Other Bots
+            other_bots = [p for p in bots if not p["is_assistant"]]
+            if other_bots:
+                log_text += f"**🔧 Other Bots ({len(other_bots)})**\n"
+                for p in other_bots:
                     username = f"@{p['username']}" if p['username'] else f"`{p['user_id']}`"
                     log_text += f"🔧 {username}\n"
             
@@ -285,8 +424,11 @@ class ChannelDetector:
             return []
     
     async def get_admin_and_owner_info(self, chat_id: int) -> Dict:
-        """Get detailed info about channel owner and admins with logging"""
+        """Get detailed info about channel owner and admins"""
         try:
+            if not self.assistant_id:
+                await self.get_assistant_info()
+            
             owner = await self.get_channel_owner(chat_id)
             
             admins = []
@@ -297,6 +439,7 @@ class ChannelDetector:
                     "username": admin.user.username,
                     "first_name": admin.user.first_name,
                     "status": admin.status,
+                    "is_assistant": admin.user.id == self.assistant_id,
                 })
             
             result = {
@@ -305,13 +448,14 @@ class ChannelDetector:
                 "owner_username": owner.username if owner else None,
                 "total_admins": len(admins),
                 "admins": admins,
+                "assistant_is_admin": any(a["is_assistant"] for a in admins),
             }
             
-            # Send admin info log
             log_text = f"👑 **Owner & Admins**\n"
             if owner:
                 log_text += f"Owner: @{owner.username or owner.id}\n"
-            log_text += f"Total Admins: `{len(admins)}`"
+            log_text += f"Total Admins: `{len(admins)}`\n"
+            log_text += f"Assistant Admin Status: {'✅ Yes' if result['assistant_is_admin'] else '❌ No'}"
             
             await self.send_log(log_text, "ADMIN_INFO")
             
@@ -334,20 +478,28 @@ class ChannelDetector:
 
 
 # Usage Integration
-async def setup_channel_detector(assistant: Client, log_channel_id: int):
+async def setup_channel_detector(assistant_client: Client, pytgcalls_client: PyTgCalls = None, log_channel_id: int = None):
     """
-    Setup channel detector with logging
+    Setup channel detector with voice chat monitoring
     
     Args:
-        assistant: Assistant client from config
+        assistant_client: Client from get_assistant() 
+        pytgcalls_client: PyTgCalls instance for voice chat
         log_channel_id: Channel ID for logs (from config)
     
     Returns:
         ChannelDetector instance
     """
-    detector = ChannelDetector(assistant, log_channel_id)
+    detector = ChannelDetector(assistant_client, pytgcalls_client, log_channel_id)
     
-    # Send startup log
-    await detector.send_log("✅ Channel Detector initialized and ready!", "INFO")
+    # Get assistant info
+    asst_info = await detector.get_assistant_info()
+    
+    if asst_info:
+        startup_msg = f"✅ Channel Detector initialized!\n🤖 Assistant: @{asst_info['username']}\n🆔 ID: `{asst_info['id']}`"
+    else:
+        startup_msg = "⚠️ Channel Detector initialized but couldn't detect assistant info"
+    
+    await detector.send_log(startup_msg, "INFO")
     
     return detector
