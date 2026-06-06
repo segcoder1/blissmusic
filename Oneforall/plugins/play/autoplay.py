@@ -1,8 +1,10 @@
 import random
 import asyncio
 import time
+from datetime import datetime
 
 from pyrogram import filters
+from pyrogram.enums import ButtonStyle
 from pyrogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -38,6 +40,8 @@ autoplay_queue = {}
 progress_messages = {}
 # Track update tasks
 update_tasks = {}
+# Track start time for each song
+track_start_times = {}
 
 
 def create_progress_bar(current_sec, total_sec, bar_length=12):
@@ -66,20 +70,24 @@ def get_progress_buttons(chat_id, current_sec, total_sec):
             InlineKeyboardButton(
                 f"{format_time(current_sec)} {progress_bar} {format_time(total_sec)}",
                 callback_data=f"aprogress_show|{chat_id}",
+                style=ButtonStyle.SECONDARY,
             ),
         ],
         [
             InlineKeyboardButton(
                 "⏭ sᴋɪᴘ",
                 callback_data="askip",
+                style=ButtonStyle.PRIMARY,
             ),
             InlineKeyboardButton(
                 "📋 Qᴜᴇᴜᴇ",
                 callback_data=f"aqueue|{chat_id}",
+                style=ButtonStyle.PRIMARY,
             ),
             InlineKeyboardButton(
-                "ᴄʟᴏsᴇ",
+                "❌ ᴄʟᴏsᴇ",
                 callback_data="close",
+                style=ButtonStyle.DANGER,
             ),
         ]
     ]
@@ -177,7 +185,7 @@ async def handle_language_selection(client, CallbackQuery, _):
 
     # Dialogue box
     await CallbackQuery.answer(
-        f"<✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}",
+        f"✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}",
         show_alert=True,
     )
 
@@ -299,6 +307,10 @@ async def autoplay_seek_command(client, message, _):
         
         if chat_id in current_autoplay_track:
             await Hotty.seek_stream(chat_id, total_seconds)
+            
+            # Update track start time to resync progress bar
+            if chat_id in track_start_times:
+                track_start_times[chat_id] = time.time() - total_seconds
             
             await message.reply_text(
                 f"<blockquote>📍 **sᴇᴇᴋɪɴɢ ᴛᴏ:** {format_time(total_seconds)}</blockquote>"
@@ -447,23 +459,41 @@ async def autoplay_progress_callback(client, CallbackQuery, _):
         await CallbackQuery.answer("❌ ɴᴏ sᴏɴɢ ᴘʟᴀʏɪɴɢ", show_alert=False)
 
 
+# Global close button handler
+@app.on_callback_query(filters.regex("^close$"))
+async def close_button_handler(client, CallbackQuery):
+    """Handle close button globally"""
+    try:
+        await CallbackQuery.answer()
+        await CallbackQuery.message.delete()
+    except Exception as e:
+        print(f"Close button error: {e}")
+        try:
+            await CallbackQuery.answer("Unable to close message", show_alert=False)
+        except:
+            pass
+
+
 async def update_progress_buttons(chat_id, message_id, total_duration, title, duration_str, thumbnail_url, mood, artist=""):
-    """Update progress bar buttons and image every 1 second"""
+    """Update progress bar buttons and image in real-time based on playback"""
     
     try:
         if chat_id not in current_autoplay_track:
             return
         
-        start_time = time.time()
+        # Record when this song started playing
+        track_start_times[chat_id] = time.time()
         last_update = 0
         
         while chat_id in current_autoplay_track:
-            elapsed = int(time.time() - start_time)
+            # Calculate elapsed time from when song started
+            elapsed = int(time.time() - track_start_times.get(chat_id, time.time()))
             
+            # Stop if track has finished
             if elapsed > total_duration:
                 break
             
-            # Update track info
+            # Update track info with current elapsed time
             current_autoplay_track[chat_id]["current_sec"] = elapsed
             
             # Update message every 1 second (for smooth progress bar)
@@ -632,76 +662,4 @@ async def process_autoplay_skip(chat_id, message):
             progress_messages[chat_id] = sent_message.id
             
             # Cancel previous update task if exists
-            if chat_id in update_tasks:
-                try:
-                    update_tasks[chat_id].cancel()
-                except:
-                    pass
-            
-            # Start progress bar update task
-            update_tasks[chat_id] = asyncio.create_task(
-                update_progress_buttons(chat_id, sent_message.id, duration_sec, title, duration_str, thumbnail_url, mood, artist)
-            )
-
-        except Exception as e:
-            print(f"Thumbnail Send Error: {e}")
-
-    except Exception as e:
-        print(f"Askip Error: {e}")
-
-        return await message.reply_text(
-            "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ sᴋɪᴘ ᴀᴜ���ᴏᴘʟᴀʏ sᴏɴɢ**</blockquote>"
-        )
-
-
-async def get_autoplay_recommendation(chat_id: int):
-
-    if chat_id not in previous_tracks:
-        previous_tracks[chat_id] = []
-
-    mood_data = await get_autoplay_mood(chat_id)
-
-    mood = "chill"
-    language = "english"
-
-    if isinstance(mood_data, dict):
-        mood = mood_data.get("mood", "chill")
-        language = mood_data.get("language", "english")
-
-    used_ids = [x["vidid"] for x in previous_tracks[chat_id]]
-
-    for _ in range(10):
-
-        query = (
-            f"{random.choice(['best', 'top', 'viral', 'popular'])} "
-            f"{language} {mood} songs"
-        )
-
-        try:
-            track_data, track_id = await YouTube.track(query)
-
-            if not track_data or not track_id:
-                continue
-
-            if track_id in used_ids:
-                continue
-
-            if len(previous_tracks[chat_id]) >= 10:
-                previous_tracks[chat_id].pop(0)
-
-            previous_tracks[chat_id].append(
-                {
-                    "title": track_data.get("title"),
-                    "vidid": track_id,
-                    "mood": mood,
-                    "language": language,
-                }
-            )
-
-            return track_data, track_id
-
-        except Exception as e:
-            print(f"Autoplay Error: {e}")
-            continue
-
-    return None, None
+            if chat_id in 
