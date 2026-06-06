@@ -42,44 +42,36 @@ update_tasks = {}
 # Track start time for each song
 track_start_times = {}
 
-
-def create_progress_bar(current_sec, total_sec, bar_length=12):
-    if not total_sec:
-        return "▬" * bar_length
-
-    percentage = min(current_sec / total_sec, 1)
-
-    filled = round(bar_length * percentage)
-
-    return (
-        "━" * filled +
-        "◉" +
-        "━" * max(0, bar_length - filled - 1)
-    )
+# Support group links
+SUPPORT_GROUP = "https://t.me/YourSupportGroup"
+BUG_REPORT_GROUP = "https://t.me/YourBugReportGroup"
 
 
-def get_progress_buttons(chat_id, current_sec, total_sec):
-    """Get progress bar as inline buttons with time stamps"""
-    
-    # Create visual progress bar
-    progress_bar = create_progress_bar(current_sec, total_sec, 10)
+def get_action_buttons(chat_id):
+    """Get action buttons with skip, queue, support and bug report"""
     
     buttons = [
         [
             InlineKeyboardButton(
-                f"{format_time(current_sec)} {progress_bar} {format_time(total_sec)}",
-                callback_data=f"aprogress_show|{chat_id}",
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                "⏭ sᴋɪᴘ",
+                "⏭️ sᴋɪᴘ",
                 callback_data="askip",
             ),
             InlineKeyboardButton(
                 "📋 Qᴜᴇᴜᴇ",
                 callback_data=f"aqueue|{chat_id}",
             ),
+        ],
+        [
+            InlineKeyboardButton(
+                "💬 sᴜᴘᴘᴏʀᴛ",
+                url=SUPPORT_GROUP,
+            ),
+            InlineKeyboardButton(
+                "🐛 ʙᴜɢ ʀᴇᴘᴏʀᴛ",
+                url=BUG_REPORT_GROUP,
+            ),
+        ],
+        [
             InlineKeyboardButton(
                 "❌ ᴄʟᴏsᴇ",
                 callback_data="close",
@@ -88,11 +80,6 @@ def get_progress_buttons(chat_id, current_sec, total_sec):
     ]
     
     return InlineKeyboardMarkup(buttons)
-
-
-def askip_markup(chat_id=None, current_sec=0, total_sec=0):
-    """Initial markup with progress bar"""
-    return get_progress_buttons(chat_id, current_sec, total_sec)
 
 
 @app.on_message(filters.command("mconfig") & filters.group & ~BANNED_USERS)
@@ -125,7 +112,6 @@ async def handle_mood_selection(client, CallbackQuery, _):
 
     lyrical[chat_id]["autoplay_mood"] = mood
 
-    # Remove old buttons
     try:
         await CallbackQuery.message.edit_reply_markup(None)
     except:
@@ -178,7 +164,6 @@ async def handle_language_selection(client, CallbackQuery, _):
     except:
         pass
 
-    # Dialogue box
     await CallbackQuery.answer(
         f"✅ ᴀᴜᴛᴏᴘʟᴀʏ ᴇɴᴀʙʟᴇᴅ\n🎵 {mood.title()}\n🌐 {language.title()}",
         show_alert=True,
@@ -207,9 +192,7 @@ async def toggle_autoplay(client, CallbackQuery, _):
 
     autoplay_status = await is_autoplay_on(chat_id)
 
-    # Disable autoplay
     if autoplay_status:
-
         await set_autoplay(chat_id, False)
 
         try:
@@ -217,13 +200,11 @@ async def toggle_autoplay(client, CallbackQuery, _):
         except:
             pass
 
-        # Dialogue box only
         return await CallbackQuery.answer(
             "❌ ᴀᴜᴛᴏᴘʟᴀʏ ᴅɪsᴀʙʟᴇᴅ",
             show_alert=True,
         )
 
-    # Enable setup
     try:
         await CallbackQuery.message.edit_reply_markup(None)
     except:
@@ -244,10 +225,7 @@ async def autoplay_skip_command(client, message, _):
 
     chat_id = message.chat.id
 
-    await process_autoplay_skip(
-        chat_id,
-        message,
-    )
+    await process_autoplay_skip(chat_id, message)
 
 
 @app.on_callback_query(filters.regex("^askip$"))
@@ -256,12 +234,9 @@ async def autoplay_skip_callback(client, CallbackQuery, _):
 
     chat_id = CallbackQuery.message.chat.id
 
-    await CallbackQuery.answer("⏭ sᴋɪᴘᴘɪɴɢ...")
+    await CallbackQuery.answer("⏭️ sᴋɪᴘᴘɪɴɢ...")
 
-    await process_autoplay_skip(
-        chat_id,
-        CallbackQuery.message,
-    )
+    await process_autoplay_skip(chat_id, CallbackQuery.message)
 
 
 @app.on_message(filters.command("aseek") & filters.group & ~BANNED_USERS)
@@ -303,7 +278,6 @@ async def autoplay_seek_command(client, message, _):
         if chat_id in current_autoplay_track:
             await Hotty.seek_stream(chat_id, total_seconds)
             
-            # Update track start time to resync progress bar
             if chat_id in track_start_times:
                 track_start_times[chat_id] = time.time() - total_seconds
             
@@ -410,9 +384,7 @@ async def autoplay_queue_callback(client, CallbackQuery, _):
             remaining = len(previous_tracks[chat_id]) - shown
 
             if remaining > 0:
-                queue_text += (
-                    f"\n➕ **{remaining} ᴍᴏʀᴇ ᴛʀᴀᴄᴋs ɴᴏᴛ sʜᴏᴡɴ**"
-                )
+                queue_text += f"\n➕ **{remaining} ᴍᴏʀᴇ ᴛʀᴀᴄᴋs ɴᴏᴛ sʜᴏᴡɴ**"
             break
 
         queue_text += line
@@ -434,25 +406,6 @@ async def autoplay_queue_callback(client, CallbackQuery, _):
             show_alert=True,
         )
 
-@app.on_callback_query(filters.regex("^aprogress_show\\|"))
-@languageCB
-async def autoplay_progress_callback(client, CallbackQuery, _):
-    """Progress bar button - shows current time"""
-    
-    chat_id = int(CallbackQuery.data.split("|")[1])
-    
-    if chat_id in current_autoplay_track:
-        track = current_autoplay_track[chat_id]
-        current_sec = track.get("current_sec", 0)
-        total_sec = track.get("duration_sec", 0)
-        
-        await CallbackQuery.answer(
-            f"⏱ {format_time(current_sec)} / {format_time(total_sec)}",
-            show_alert=False,
-        )
-    else:
-        await CallbackQuery.answer("❌ ɴᴏ sᴏɴɢ ᴘʟᴀʏɪɴɢ", show_alert=False)
-
 
 # Global close button handler
 @app.on_callback_query(filters.regex("^close$"))
@@ -467,78 +420,6 @@ async def close_button_handler(client, CallbackQuery):
             await CallbackQuery.answer("Unable to close message", show_alert=False)
         except:
             pass
-
-
-async def update_progress_buttons(chat_id, message_id, total_duration, title, duration_str, thumbnail_url, mood, artist=""):
-    """Update progress bar buttons and image in real-time based on playback"""
-    
-    try:
-        if chat_id not in current_autoplay_track:
-            return
-        
-        # Record when this song started playing
-        track_start_times[chat_id] = time.time()
-        last_update = 0
-        
-        while chat_id in current_autoplay_track:
-            # Calculate elapsed time from when song started
-            elapsed = int(time.time() - track_start_times.get(chat_id, time.time()))
-            
-            # Stop if track has finished
-            if elapsed > total_duration:
-                break
-            
-            # Update track info with current elapsed time
-            current_autoplay_track[chat_id]["current_sec"] = elapsed
-            
-            # Update message every 1 second (for smooth progress bar)
-            if elapsed - last_update >= 1:
-                try:
-                    if chat_id in progress_messages and message_id == progress_messages[chat_id]:
-                        # Update buttons with new progress bar
-                        new_markup = get_progress_buttons(chat_id, elapsed, total_duration)
-                        
-                        # Generate new thumbnail with updated progress
-                        spotify_img = create_spotify_thumbnail_with_yt_image(
-                            thumbnail_url,
-                            title,
-                            duration_str,
-                            elapsed,
-                            total_duration,
-                            mood,
-                            artist
-                        )
-                        
-                        if spotify_img:
-                            img_bytes = save_image_to_bytes(spotify_img)
-                            
-                            try:
-                                await app.edit_message_media(
-                                    chat_id=chat_id,
-                                    message_id=message_id,
-                                    media=await app.prepare_file(img_bytes)
-                                )
-                            except:
-                                pass
-                        
-                        # Update buttons separately
-                        try:
-                            await app.edit_message_reply_markup(
-                                chat_id=chat_id,
-                                message_id=message_id,
-                                reply_markup=new_markup
-                            )
-                        except:
-                            pass
-                        
-                        last_update = elapsed
-                except Exception as e:
-                    print(f"Progress Update Error: {e}")
-            
-            await asyncio.sleep(0.5)
-    
-    except Exception as e:
-        print(f"Progress Update Task Error: {e}")
 
 
 async def process_autoplay_skip(chat_id, message):
@@ -583,7 +464,6 @@ async def process_autoplay_skip(chat_id, message):
                 video=False,
             )
             
-            # More robust validation
             if not file_path:
                 print(f"Download returned empty file_path for track_id: {track_id}")
                 raise ValueError(f"Download failed: empty file_path for {track_id}")
@@ -595,14 +475,12 @@ async def process_autoplay_skip(chat_id, message):
             )
             return
 
-        # ✅ FIX #1: Check if file_path is None before using it
         if not file_path or file_path is None:
             return await message.reply_text(
-                "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ sᴏɴɢ - ɴᴏ ғɪʟᴇ ᴘᴀᴛʜ**</blockquote>"
+                "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ sᴏɴɢ**</blockquote>"
             )
 
         try:
-            # Ensure file_path is valid before calling skip_stream
             if not isinstance(file_path, (str, bytes)):
                 file_path = str(file_path) if file_path else None
                 if not file_path:
@@ -611,7 +489,7 @@ async def process_autoplay_skip(chat_id, message):
             await Hotty.skip_stream(
                 chat_id,
                 file_path,
-                video=False,  # Changed from None to False
+                video=False,
             )
 
         except Exception as e:
@@ -632,8 +510,8 @@ async def process_autoplay_skip(chat_id, message):
                 thumbnail_url,
                 title,
                 duration_str,
-                0,  # current_sec
-                duration_sec,  # total_sec
+                0,
+                duration_sec,
                 mood,
                 artist
             )
@@ -645,9 +523,11 @@ async def process_autoplay_skip(chat_id, message):
                     chat_id=chat_id,
                     photo=img_bytes,
                     caption=(
-                        "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴋɩᴘᴘ𝛆ɗ ✮**</blockquote>"
+                        f"<blockquote>🎵 **{title}**\n"
+                        f"🎤 {artist}\n"
+                        f"⏱️ {duration_str}</blockquote>"
                     ),
-                    reply_markup=askip_markup(chat_id, 0, duration_sec),
+                    reply_markup=get_action_buttons(chat_id),
                 )
             else:
                 # Fallback
@@ -655,9 +535,11 @@ async def process_autoplay_skip(chat_id, message):
                     chat_id=chat_id,
                     photo=thumbnail_url if thumbnail_url else config.YOUTUBE_IMG_URL,
                     caption=(
-                        "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴋɩᴘᴘ𝛆ɗ ✮**</blockquote>"
+                        f"<blockquote>🎵 **{title}**\n"
+                        f"🎤 {artist}\n"
+                        f"⏱️ {duration_str}</blockquote>"
                     ),
-                    reply_markup=askip_markup(chat_id, 0, duration_sec),
+                    reply_markup=get_action_buttons(chat_id),
                 )
 
             # Store current track info
@@ -678,11 +560,6 @@ async def process_autoplay_skip(chat_id, message):
                     update_tasks[chat_id].cancel()
                 except:
                     pass
-            
-            # Start progress bar update task
-            update_tasks[chat_id] = asyncio.create_task(
-                update_progress_buttons(chat_id, sent_message.id, duration_sec, title, duration_str, thumbnail_url, mood, artist)
-            )
 
         except Exception as e:
             print(f"Thumbnail Send Error: {e}")
@@ -694,8 +571,9 @@ async def process_autoplay_skip(chat_id, message):
             "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ sᴋɪᴘ ᴀᴜᴛᴏᴘʟᴀʏ sᴏɴɢ**</blockquote>"
         )
 
+
 async def get_autoplay_recommendation(chat_id: int):
-    """Get accurate song recommendations, avoiding playlists and low-quality results"""
+    """Get high-quality song recommendations with improved search quality"""
 
     if chat_id not in previous_tracks:
         previous_tracks[chat_id] = []
@@ -711,33 +589,101 @@ async def get_autoplay_recommendation(chat_id: int):
 
     used_ids = [x["vidid"] for x in previous_tracks[chat_id]]
 
-    # Enhanced search with better specificity
-    search_keywords = [
-        f"best {language} {mood} song",
-        f"top {language} {mood} track",
-        f"{language} {mood} music official",
-        f"new {language} {mood} songs",
-        f"viral {language} {mood} track",
+    # ✅ IMPROVED: Better quality search keywords with artist preferences
+    search_templates = {
+        "english": {
+            "chill": [
+                "{} chill mix lofi hip hop 2024",
+                "{} ambient relaxation sleep music official",
+                "{} indie bedroom pop 2024",
+                "{} lo-fi beats study focus 2024",
+                "{} aesthetic chill vibes no copyright",
+            ],
+            "energetic": [
+                "{} edm dance electronic 2024 official",
+                "{} hip hop rap bass boost 2024",
+                "{} upbeat pop summer hits 2024",
+                "{} workout fitness motivation 2024",
+                "{} party club bangers 2024",
+            ],
+            "romantic": [
+                "{} romantic ballad love songs 2024 official",
+                "{} slow music emotional soul 2024",
+                "{} acoustic guitar love cover 2024",
+                "{} indie love songs 2024",
+                "{} r&b slow jams 2024",
+            ],
+            "classical": [
+                "{} classical music piano concert",
+                "{} orchestral instrumental composition",
+                "{} violin solo masterpiece",
+                "{} symphony classical relaxation",
+                "{} mozart bach classical compilation",
+            ],
+        },
+        "hindi": {
+            "chill": [
+                "{} bollywood chill lofi remix 2024",
+                "{} hindi indie lo-fi beats 2024",
+                "{} hindi sad songs emotional 2024",
+                "{} acoustic hindi cover 2024",
+                "{} hindi relaxation instrumental 2024",
+            ],
+            "energetic": [
+                "{} hindi bollywood party songs 2024",
+                "{} hindi rap hip hop 2024",
+                "{} hindi dance remix 2024",
+                "{} bollywood upbeat party hits",
+                "{} hindi edm electronic dance 2024",
+            ],
+            "romantic": [
+                "{} bollywood romantic songs 2024",
+                "{} hindi love songs acoustic 2024",
+                "{} hindi sad emotional love 2024",
+                "{} bollywood couple songs 2024",
+                "{} hindi romantic ballad 2024",
+            ],
+        },
+    }
+
+    # Popular artists to avoid generic results
+    popular_artists = [
+        "the weeknd", "billie eilish", "ariana grande", "dua lipa",
+        "bad bunny", "lil baby", "drake", "olivia rodrigo",
+        "taylor swift", "harry styles", "travis scott", "post malone",
+        "arijit singh", "neha kakkar", "atif aslam", "rahat fateh ali khan",
     ]
 
-    for attempt in range(15):  # Increased attempts for better results
+    for attempt in range(20):
         try:
-            # Use randomized but quality-focused search query
-            query = random.choice(search_keywords)
+            # Get language-specific search keywords
+            lang_searches = search_templates.get(language, search_templates["english"])
+            mood_searches = lang_searches.get(mood, lang_searches["chill"])
             
-            # Add filter to avoid playlists
-            query += " -playlist -mix -collection"
+            # Pick a random template and artist for variety
+            template = random.choice(mood_searches)
+            artist = random.choice(popular_artists) if attempt % 3 == 0 else ""
+            
+            query = template.format(artist) if artist else template
+            
+            # Add quality filters
+            query += " -playlist -mix -covers -karaoke -instrumental -remix"
             
             track_data, track_id = await YouTube.track(query)
 
             if not track_data or not track_id:
                 continue
 
-            # Verify track is not a playlist/mix
             title = track_data.get("title", "").lower()
+            duration = track_data.get("duration", "0:00")
             
-            # Skip if it looks like a playlist or compilation
-            skip_keywords = ["playlist", "mix", "compilation", "collection", "radio", "full album"]
+            # Skip unwanted content
+            skip_keywords = [
+                "playlist", "mix", "compilation", "collection", "radio", "full album",
+                "full movie", "trailer", "lyric video only", "bgm", "background",
+                "cover band", "covers only", "guitar tutorial", "how to play"
+            ]
+            
             if any(keyword in title for keyword in skip_keywords):
                 continue
 
@@ -745,8 +691,22 @@ async def get_autoplay_recommendation(chat_id: int):
             if track_id in used_ids:
                 continue
 
+            # Duration validation (skip too short or too long)
+            try:
+                duration_parts = duration.split(":")
+                if len(duration_parts) == 2:
+                    dur_sec = int(duration_parts[0]) * 60 + int(duration_parts[1])
+                else:
+                    dur_sec = int(duration_parts[0])
+                
+                # Accept songs between 2 min and 12 min
+                if dur_sec < 120 or dur_sec > 720:
+                    continue
+            except:
+                pass
+
             # Maintain queue size
-            if len(previous_tracks[chat_id]) >= 10:
+            if len(previous_tracks[chat_id]) >= 15:
                 previous_tracks[chat_id].pop(0)
 
             previous_tracks[chat_id].append(
@@ -758,12 +718,13 @@ async def get_autoplay_recommendation(chat_id: int):
                 }
             )
 
-            print(f"Found quality track: {track_data.get('title')}")
+            print(f"✅ Found quality track: {track_data.get('title')}")
             return track_data, track_id
 
         except Exception as e:
             print(f"Autoplay search attempt {attempt + 1} error: {e}")
+            await asyncio.sleep(0.5)
             continue
 
-    print(f"Failed to find autoplay recommendation after 15 attempts")
+    print(f"❌ Failed to find quality autoplay recommendation after 20 attempts")
     return None, None
