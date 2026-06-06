@@ -43,8 +43,8 @@ update_tasks = {}
 track_start_times = {}
 
 # Support group links
-SUPPORT_GROUP = "https://t.me/YourSupportGroup"
-BUG_REPORT_GROUP = "https://t.me/YourBugReportGroup"
+SUPPORT_GROUP = "https://t.me/theinfinitynetwork"
+BUG_REPORT_GROUP = "https://t.me/theinfinity_support"
 
 
 def get_action_buttons(chat_id):
@@ -73,7 +73,7 @@ def get_action_buttons(chat_id):
         ],
         [
             InlineKeyboardButton(
-                "❌ ᴄʟᴏsᴇ",
+                "🌙 ᴄʟᴏsᴇ",
                 callback_data="close",
             ),
         ]
