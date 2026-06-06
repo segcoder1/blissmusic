@@ -1,11 +1,12 @@
 
 import asyncio
+import time
 from datetime import datetime
 from typing import Optional, Dict, Tuple
 
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.enums import ChatMemberStatus, MessageEntityType
+from pyrogram.enums import ChatMemberStatus, MessageEntityType, ButtonStyle
 from pyrogram.errors import PeerIdInvalid, UserNotParticipant
 
 from Oneforall import app
@@ -61,6 +62,17 @@ text ~ [button text, button link]
 """
 
 # ==================== HELPER FUNCTIONS ====================
+
+
+def get_button_style() -> ButtonStyle:
+    """Get button style that cycles every 5 seconds: PRIMARY -> SUCCESS -> DANGER"""
+    cycle = int(time.time()) % 15
+    if cycle < 5:
+        return ButtonStyle.PRIMARY
+    elif cycle < 10:
+        return ButtonStyle.SUCCESS
+    else:
+        return ButtonStyle.DANGER
 
 
 async def get_welcome_data(chat_id: int) -> Optional[Dict]:
@@ -158,7 +170,6 @@ async def format_welcome_text(
 @app.on_message(
     filters.command("setwelcome")
     & filters.group
-    & ~filters.edited
 )
 @adminsOnly
 async def set_welcome(client: Client, message: Message):
@@ -245,7 +256,6 @@ async def set_welcome(client: Client, message: Message):
 @app.on_message(
     filters.command("getwelcome")
     & filters.group
-    & ~filters.edited
 )
 async def get_welcome(client: Client, message: Message):
     """Get current welcome message"""
@@ -265,12 +275,15 @@ async def get_welcome(client: Client, message: Message):
         file_id = welcome_data.get("file_id")
         keyboard = welcome_data.get("keyboard")
         
+        # Get button style
+        button_style = get_button_style()
+        
         # Create keyboard markup if exists
         inline_kb = None
         if keyboard:
             buttons = []
             for i, (text, url) in enumerate(keyboard.items()):
-                buttons.append(InlineKeyboardButton(text, url=url))
+                buttons.append(InlineKeyboardButton(text, url=url, style=button_style))
             inline_kb = InlineKeyboardMarkup([buttons])
         
         # Send welcome message preview
@@ -331,7 +344,6 @@ async def get_welcome(client: Client, message: Message):
 @app.on_message(
     filters.command("delwelcome")
     & filters.group
-    & ~filters.edited
 )
 @adminsOnly
 async def del_welcome(client: Client, message: Message):
@@ -384,12 +396,15 @@ async def welcome_members(client: Client, message: Message):
                 file_id = welcome_data.get("file_id")
                 keyboard = welcome_data.get("keyboard")
                 
+                # Get button style
+                button_style = get_button_style()
+                
                 # Create keyboard markup if exists
                 inline_kb = None
                 if keyboard:
                     buttons = []
                     for text, url in keyboard.items():
-                        buttons.append(InlineKeyboardButton(text, url=url))
+                        buttons.append(InlineKeyboardButton(text, url=url, style=button_style))
                     inline_kb = InlineKeyboardMarkup([buttons])
                 
                 # Send welcome message with media
