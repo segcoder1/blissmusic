@@ -682,4 +682,77 @@ async def process_autoplay_skip(chat_id, message):
         return await message.reply_text(
             "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ sᴋɪᴘ ᴀᴜᴛᴏᴘʟᴀʏ sᴏɴɢ**</blockquote>"
         )
-        
+
+async def get_autoplay_recommendation(chat_id: int):
+    """Get accurate song recommendations, avoiding playlists and low-quality results"""
+
+    if chat_id not in previous_tracks:
+        previous_tracks[chat_id] = []
+
+    mood_data = await get_autoplay_mood(chat_id)
+
+    mood = "chill"
+    language = "english"
+
+    if isinstance(mood_data, dict):
+        mood = mood_data.get("mood", "chill")
+        language = mood_data.get("language", "english")
+
+    used_ids = [x["vidid"] for x in previous_tracks[chat_id]]
+
+    # Enhanced search with better specificity
+    search_keywords = [
+        f"best {language} {mood} song",
+        f"top {language} {mood} track",
+        f"{language} {mood} music official",
+        f"new {language} {mood} songs",
+        f"viral {language} {mood} track",
+    ]
+
+    for attempt in range(15):  # Increased attempts for better results
+        try:
+            # Use randomized but quality-focused search query
+            query = random.choice(search_keywords)
+            
+            # Add filter to avoid playlists
+            query += " -playlist -mix -collection"
+            
+            track_data, track_id = await YouTube.track(query)
+
+            if not track_data or not track_id:
+                continue
+
+            # Verify track is not a playlist/mix
+            title = track_data.get("title", "").lower()
+            
+            # Skip if it looks like a playlist or compilation
+            skip_keywords = ["playlist", "mix", "compilation", "collection", "radio", "full album"]
+            if any(keyword in title for keyword in skip_keywords):
+                continue
+
+            # Skip if already in queue
+            if track_id in used_ids:
+                continue
+
+            # Maintain queue size
+            if len(previous_tracks[chat_id]) >= 10:
+                previous_tracks[chat_id].pop(0)
+
+            previous_tracks[chat_id].append(
+                {
+                    "title": track_data.get("title"),
+                    "vidid": track_id,
+                    "mood": mood,
+                    "language": language,
+                }
+            )
+
+            print(f"Found quality track: {track_data.get('title')}")
+            return track_data, track_id
+
+        except Exception as e:
+            print(f"Autoplay search attempt {attempt + 1} error: {e}")
+            continue
+
+    print(f"Failed to find autoplay recommendation after 15 attempts")
+    return None, None
