@@ -582,11 +582,18 @@ async def process_autoplay_skip(chat_id, message):
                 videoid=True,
                 video=False,
             )
+            
+            # More robust validation
+            if not file_path:
+                print(f"Download returned empty file_path for track_id: {track_id}")
+                raise ValueError(f"Download failed: empty file_path for {track_id}")
+                
         except Exception as e:
             print(f"Download Error: {e}")
-            return await message.reply_text(
-                "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ sᴏɴɢ**</blockquote>"
+            await message.reply_text(
+                f"<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ sᴏɴɢ**: {str(e)[:50]}</blockquote>"
             )
+            return
 
         # ✅ FIX #1: Check if file_path is None before using it
         if not file_path or file_path is None:
@@ -595,16 +602,22 @@ async def process_autoplay_skip(chat_id, message):
             )
 
         try:
+            # Ensure file_path is valid before calling skip_stream
+            if not isinstance(file_path, (str, bytes)):
+                file_path = str(file_path) if file_path else None
+                if not file_path:
+                    raise ValueError("Invalid file path for streaming")
+            
             await Hotty.skip_stream(
                 chat_id,
                 file_path,
-                video=None,
+                video=False,  # Changed from None to False
             )
 
         except Exception as e:
             print(f"Change Stream Error: {e}")
             return await message.reply_text(
-                "<blockquote>😭 **ғᴀɪʟᴇᴅ ᴛᴏ ᴄʜᴀɴɢᴇ sᴛʀᴇᴀᴍ**</blockquote>"
+                f"<blockquote>😭 **ғᴀɪʟᴇᴅ ᴛᴏ ᴄʜᴀɴɢᴇ sᴛʀᴇᴀᴍ**: {str(e)[:60]}</blockquote>"
             )
 
         try:
