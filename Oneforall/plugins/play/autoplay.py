@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 
 from pyrogram import filters
-from pyrogram.enums import ButtonStyle
 from pyrogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -70,24 +69,20 @@ def get_progress_buttons(chat_id, current_sec, total_sec):
             InlineKeyboardButton(
                 f"{format_time(current_sec)} {progress_bar} {format_time(total_sec)}",
                 callback_data=f"aprogress_show|{chat_id}",
-                style=ButtonStyle.SECONDARY,
             ),
         ],
         [
             InlineKeyboardButton(
                 "⏭ sᴋɪᴘ",
                 callback_data="askip",
-                style=ButtonStyle.PRIMARY,
             ),
             InlineKeyboardButton(
                 "📋 Qᴜᴇᴜᴇ",
                 callback_data=f"aqueue|{chat_id}",
-                style=ButtonStyle.PRIMARY,
             ),
             InlineKeyboardButton(
                 "❌ ᴄʟᴏsᴇ",
                 callback_data="close",
-                style=ButtonStyle.DANGER,
             ),
         ]
     ]
@@ -589,13 +584,17 @@ async def process_autoplay_skip(chat_id, message):
             )
         except Exception as e:
             print(f"Download Error: {e}")
-
             return await message.reply_text(
                 "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ sᴏɴɢ**</blockquote>"
             )
 
-        try:
+        # ✅ FIX #1: Check if file_path is None before using it
+        if not file_path or file_path is None:
+            return await message.reply_text(
+                "<blockquote>❌ **ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ sᴏɴɢ - ɴᴏ ғɪʟᴇ ᴘᴀᴛʜ**</blockquote>"
+            )
 
+        try:
             await Hotty.skip_stream(
                 chat_id,
                 file_path,
@@ -604,7 +603,6 @@ async def process_autoplay_skip(chat_id, message):
 
         except Exception as e:
             print(f"Change Stream Error: {e}")
-
             return await message.reply_text(
                 "<blockquote>😭 **ғᴀɪʟᴇᴅ ᴛᴏ ᴄʜᴀɴɢᴇ sᴛʀᴇᴀᴍ**</blockquote>"
             )
