@@ -1,4 +1,7 @@
 import random
+import asyncio
+import time
+from datetime import datetime
 
 from pyrogram import filters
 from pyrogram.types import (
@@ -24,6 +27,10 @@ from Oneforall.utils.inline import (
 
 # Store previous tracks per chat
 previous_tracks = {}
+# Store progress update tasks per chat
+progress_tasks = {}
+# Store active autoplay messages for progress bar updates
+autoplay_messages = {}
 
 
 def askip_markup():
@@ -37,11 +44,162 @@ def askip_markup():
                 ),
                 InlineKeyboardButton(
                     "ᴄʟᴏsᴇ",
-                    callback_data="close",
+                    callback_data="autoplay_close",
                     style=ButtonStyle.DANGER,
                 ),
             ]
         ]
+    )
+
+
+def autoplay_toggle_markup():
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "✅ ᴇɴᴀʙʟᴇ",
+                    callback_data="autoplay_enable",
+                ),
+                InlineKeyboardButton(
+                    "❌ ᴅɪsᴀʙʟᴇ",
+                    callback_data="autoplay_disable",
+                ),
+            ]
+        ]
+    )
+
+
+def build_progress_bar(played_sec, total_sec, bar_length=10):
+    """Build a visual progress bar"""
+    if total_sec == 0:
+        filled = 0
+    else:
+        filled = int((played_sec / total_sec) * bar_length)
+    
+    bar = "█" * filled + "░" * (bar_length - filled)
+    return bar
+
+
+def format_time(seconds):
+    """Format seconds to MM:SS"""
+    try:
+        mins, secs = divmod(int(seconds), 60)
+        return f"{mins:02d}:{secs:02d}"
+    except:
+        return "00:00"
+
+
+async def update_progress_bar(chat_id, message_id, start_time, duration_sec, title):
+    """Update progress bar periodically"""
+    try:
+        update_interval = 2  # Update every 2 seconds
+        
+        while True:
+            if chat_id not in autoplay_messages:
+                break
+            
+            elapsed = time.time() - start_time
+            
+            if elapsed >= duration_sec:
+                # Song finished
+                break
+            
+            progress_bar = build_progress_bar(elapsed, duration_sec)
+            elapsed_str = format_time(elapsed)
+            total_str = format_time(duration_sec)
+            
+            caption = (
+                "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐏ʀ๏ɠʀєssɪɴɢ ✮**</blockquote>\n\n"
+                f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
+                f"🎵 **𝐓ɪɱє :** {elapsed_str} / {total_str}\n"
+                f"📊 **𝐏ʀ๏ɠʀєss :** [{progress_bar}] {int((elapsed/duration_sec)*100)}%</blockquote>\n"
+                f"<blockquote><b>𝐏ɭᴜɠɪŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡʏ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></blockquote>"
+            )
+            
+            try:
+                await app.edit_message_caption(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    caption=caption,
+                    reply_markup=askip_markup()
+                )
+            except Exception as e:
+                print(f"Progress update error: {e}")
+                break
+            
+            await asyncio.sleep(update_interval)
+    except Exception as e:
+        print(f"Progress bar error: {e}")
+    finally:
+        # Cleanup
+        if chat_id in autoplay_messages:
+            del autoplay_messages[chat_id]
+        if chat_id in progress_tasks:
+            del progress_tasks[chat_id]
+
+
+@app.on_message(filters.command("autoplay") & filters.group & ~BANNED_USERS)
+@languageCB
+async def autoplay_command(client, message, _):
+    """Main autoplay toggle command"""
+    
+    chat_id = message.chat.id
+    autoplay_status = await is_autoplay_on(chat_id)
+    
+    status_text = "✅ **ᴄᴜʀʀᴇɴᴛʟʏ ᴇɴᴀʙʟᴇᴅ**" if autoplay_status else "❌ **ᴄᴜʀʀᴇɴᴛʟʏ ᴅɪsᴀʙʟᴇᴅ**"
+    
+    await message.reply_text(
+        f"🎵 **ᴀᴜᴛᴏᴘʟᴀʏ ᴄᴏɴᴛʀᴏʟ**\n\n{status_text}\n\n"
+        "sᴇʟᴇᴄᴛ ᴀɴ ᴀᴄᴛɪᴏɴ:",
+        reply_markup=autoplay_toggle_markup(),
+    )
+
+
+@app.on_callback_query(filters.regex("autoplay_enable"))
+@languageCB
+async def autoplay_enable_callback(client, CallbackQuery, _):
+    """Enable autoplay and show mood/language selection"""
+    
+    chat_id = CallbackQuery.message.chat.id
+    
+    try:
+        await CallbackQuery.answer()
+    except:
+        pass
+    
+    try:
+        await CallbackQuery.message.edit_reply_markup(None)
+    except:
+        pass
+    
+    await CallbackQuery.message.reply_text(
+        "🎵 **ᴀᴜᴛᴏᴘʟᴀʏ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ**\n\n"
+        "sᴇʟᴇᴄᴛ ʏᴏᴜʀ ᴘʀᴇғᴇʀʀᴇᴅ ᴍᴏᴏᴅ:",
+        reply_markup=autoplay_mood_markup(),
+    )
+
+
+@app.on_callback_query(filters.regex("autoplay_disable"))
+@languageCB
+async def autoplay_disable_callback(client, CallbackQuery, _):
+    """Disable autoplay"""
+    
+    chat_id = CallbackQuery.message.chat.id
+    
+    await set_autoplay(chat_id, False)
+    
+    try:
+        await CallbackQuery.answer()
+    except:
+        pass
+    
+    try:
+        await CallbackQuery.message.edit_reply_markup(None)
+    except:
+        pass
+    
+    await CallbackQuery.message.reply_text(
+        "❌ **ᴀᴜᴛᴏᴘʟᴀʏ ᴅɪsᴀʙʟᴇᴅ**"
     )
 
 
@@ -214,6 +372,28 @@ async def autoplay_skip_callback(client, CallbackQuery, _):
     )
 
 
+@app.on_callback_query(filters.regex("^autoplay_close$"))
+async def autoplay_close_callback(client, CallbackQuery):
+    """Handle autoplay close button"""
+    
+    chat_id = CallbackQuery.message.chat.id
+    
+    try:
+        await CallbackQuery.answer()
+    except:
+        pass
+    
+    # Cancel progress update task if exists
+    if chat_id in progress_tasks:
+        progress_tasks[chat_id].cancel()
+        del progress_tasks[chat_id]
+    
+    try:
+        await CallbackQuery.message.delete()
+    except:
+        pass
+
+
 async def process_autoplay_skip(chat_id, message):
 
     from Oneforall.core.call import Hotty
@@ -235,6 +415,7 @@ async def process_autoplay_skip(chat_id, message):
 
         title = track_data.get("title", "Unknown")
         duration_min = track_data.get("duration", "Unknown")
+        duration_sec = track_data.get("duration_sec", 0)
         thumbnail = track_data.get("thumb")
 
         try:
@@ -267,18 +448,45 @@ async def process_autoplay_skip(chat_id, message):
             )
 
         try:
-
-            await app.send_photo(
+            # Cancel previous progress task if exists
+            if chat_id in progress_tasks:
+                progress_tasks[chat_id].cancel()
+                del progress_tasks[chat_id]
+            
+            # Send initial message with progress bar
+            initial_caption = (
+                "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴛᴀʀᴛɪɴɢ ✮**</blockquote>\n\n"
+                f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
+                f"🎵 **𝐓ɪɱє :** 00:00 / {duration_min}\n"
+                f"📊 **𝐏ʀ๏ɠʀєss :** [░░░░░░░░░░] 0%</blockquote>\n"
+                f"<blockquote><b>𝐏ɭᴜɠɪŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡʏ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></blockquote>"
+            )
+            
+            sent_message = await app.send_photo(
                 chat_id=chat_id,
                 photo=thumbnail if thumbnail else config.YOUTUBE_IMG_URL,
-                caption=(
-                    "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴋɩᴘᴘ𝛆ɗ ✮**</blockquote>\n\n"
-                    f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
-                    f"🕐 **𝐃ʋɽɑʈɩσŋ :** {duration_min}</blockquote>\n"
-                    f"<blockquote><b>𝐏ɭᴜɢɩŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡɣ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></blockquote>\n"
-                ),
+                caption=initial_caption,
                 reply_markup=askip_markup(),
             )
+            
+            # Store message info for progress updates
+            autoplay_messages[chat_id] = {
+                "message_id": sent_message.id,
+                "start_time": time.time(),
+            }
+            
+            # Create and store progress update task
+            if duration_sec > 0:
+                progress_task = asyncio.create_task(
+                    update_progress_bar(
+                        chat_id,
+                        sent_message.id,
+                        time.time(),
+                        duration_sec,
+                        title[:40]
+                    )
+                )
+                progress_tasks[chat_id] = progress_task
 
         except Exception as e:
             print(f"Thumbnail Send Error: {e}")
@@ -325,6 +533,21 @@ async def get_autoplay_recommendation(chat_id: int):
 
             if len(previous_tracks[chat_id]) >= 10:
                 previous_tracks[chat_id].pop(0)
+
+            # Convert duration to seconds for progress bar
+            duration_str = track_data.get("duration", "0:00")
+            try:
+                parts = duration_str.split(":")
+                if len(parts) == 2:
+                    duration_sec = int(parts[0]) * 60 + int(parts[1])
+                elif len(parts) == 3:
+                    duration_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                else:
+                    duration_sec = 0
+            except:
+                duration_sec = 0
+
+            track_data["duration_sec"] = duration_sec
 
             previous_tracks[chat_id].append(
                 {
