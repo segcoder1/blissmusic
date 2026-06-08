@@ -33,9 +33,53 @@ progress_tasks = {}
 autoplay_messages = {}
 
 
+def build_progress_button(played_sec, total_sec):
+    """Build a progress button text"""
+    if total_sec == 0:
+        percentage = 0
+        filled = 0
+    else:
+        percentage = int((played_sec / total_sec) * 100)
+        filled = int((played_sec / total_sec) * 10)
+    
+    bar = "█" * filled + "░" * (10 - filled)
+    mins, secs = divmod(int(played_sec), 60)
+    current_time = f"{mins:02d}:{secs:02d}"
+    total_mins, total_secs = divmod(int(total_sec), 60)
+    total_time = f"{total_mins:02d}:{total_secs:02d}"
+    
+    return f"{current_time} [{bar}] {total_time} {percentage}%"
+
+
 def askip_markup():
     return InlineKeyboardMarkup(
         [
+            [
+                InlineKeyboardButton(
+                    "sᴋɪᴘ",
+                    callback_data="askip",
+                    style=ButtonStyle.SUCCESS,
+                ),
+                InlineKeyboardButton(
+                    "ᴄʟᴏsᴇ",
+                    callback_data="autoplay_close",
+                    style=ButtonStyle.DANGER,
+                ),
+            ]
+        ]
+    )
+
+
+def askip_markup_with_progress(progress_text):
+    """Create markup with progress bar as button"""
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    progress_text,
+                    callback_data="progress_noop",
+                ),
+            ],
             [
                 InlineKeyboardButton(
                     "sᴋɪᴘ",
@@ -69,27 +113,7 @@ def autoplay_toggle_markup():
     )
 
 
-def build_progress_bar(played_sec, total_sec, bar_length=10):
-    """Build a visual progress bar"""
-    if total_sec == 0:
-        filled = 0
-    else:
-        filled = int((played_sec / total_sec) * bar_length)
-    
-    bar = "█" * filled + "░" * (bar_length - filled)
-    return bar
-
-
-def format_time(seconds):
-    """Format seconds to MM:SS"""
-    try:
-        mins, secs = divmod(int(seconds), 60)
-        return f"{mins:02d}:{secs:02d}"
-    except:
-        return "00:00"
-
-
-async def update_progress_bar(chat_id, message_id, start_time, duration_sec, title):
+async def update_progress_bar(chat_id, message_id, start_time, duration_sec, title, thumbnail):
     """Update progress bar periodically"""
     try:
         update_interval = 2  # Update every 2 seconds
@@ -104,15 +128,11 @@ async def update_progress_bar(chat_id, message_id, start_time, duration_sec, tit
                 # Song finished
                 break
             
-            progress_bar = build_progress_bar(elapsed, duration_sec)
-            elapsed_str = format_time(elapsed)
-            total_str = format_time(duration_sec)
+            progress_text = build_progress_button(elapsed, duration_sec)
             
             caption = (
                 "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐏ʀ๏ɠʀєssɪɴɢ ✮**</blockquote>\n\n"
-                f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
-                f"🎵 **𝐓ɪɱє :** {elapsed_str} / {total_str}\n"
-                f"📊 **𝐏ʀ๏ɠʀєss :** [{progress_bar}] {int((elapsed/duration_sec)*100)}%</blockquote>\n"
+                f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}</blockquote>\n"
                 f"<blockquote><b>𝐏ɭᴜɠɪŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡʏ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></blockquote>"
             )
             
@@ -121,7 +141,7 @@ async def update_progress_bar(chat_id, message_id, start_time, duration_sec, tit
                     chat_id=chat_id,
                     message_id=message_id,
                     caption=caption,
-                    reply_markup=askip_markup()
+                    reply_markup=askip_markup_with_progress(progress_text)
                 )
             except Exception as e:
                 print(f"Progress update error: {e}")
@@ -201,6 +221,15 @@ async def autoplay_disable_callback(client, CallbackQuery, _):
     await CallbackQuery.message.reply_text(
         "❌ **ᴀᴜᴛᴏᴘʟᴀʏ ᴅɪsᴀʙʟᴇᴅ**"
     )
+
+
+@app.on_callback_query(filters.regex("progress_noop"))
+async def progress_noop_callback(client, CallbackQuery):
+    """No-op callback for progress button"""
+    try:
+        await CallbackQuery.answer()
+    except:
+        pass
 
 
 @app.on_message(filters.command("mconfig") & filters.group & ~BANNED_USERS)
@@ -453,12 +482,12 @@ async def process_autoplay_skip(chat_id, message):
                 progress_tasks[chat_id].cancel()
                 del progress_tasks[chat_id]
             
-            # Send initial message with progress bar
+            # Send initial message with progress bar button
+            initial_progress = build_progress_button(0, duration_sec)
+            
             initial_caption = (
                 "<blockquote>⚙️ **𝐒ʈʀ𝛆ɑɱ𝛆ɗ 𝐀ᴜᴛ๏ᴘɭɑɣ 𝐒ᴛᴀʀᴛɪɴɢ ✮**</blockquote>\n\n"
-                f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}\n"
-                f"🎵 **𝐓ɪɱє :** 00:00 / {duration_min}\n"
-                f"📊 **𝐏ʀ๏ɠʀєss :** [░░░░░░░░░░] 0%</blockquote>\n"
+                f"<blockquote>🦋 **𝐍๏Ꮗ 𝐀ᴜᴛ๏ᴘɭɑɣɩŋʛ :** {title[:40]}</blockquote>\n"
                 f"<blockquote><b>𝐏ɭᴜɠɪŋ 𝐃𝛆ᴠ𝛆ɭ๏ᴘ𝛆ɗ 𝐅ɩη𝛆ɭɣ 𝐁ɣ </b><a href='https://t.me/theinfinitynetwork'>˹𝐒η๏ᴡʏ 𝐍𝛆ʈᴡ๏ʀᴋ˼</a></blockquote>"
             )
             
@@ -466,7 +495,7 @@ async def process_autoplay_skip(chat_id, message):
                 chat_id=chat_id,
                 photo=thumbnail if thumbnail else config.YOUTUBE_IMG_URL,
                 caption=initial_caption,
-                reply_markup=askip_markup(),
+                reply_markup=askip_markup_with_progress(initial_progress),
             )
             
             # Store message info for progress updates
@@ -483,7 +512,8 @@ async def process_autoplay_skip(chat_id, message):
                         sent_message.id,
                         time.time(),
                         duration_sec,
-                        title[:40]
+                        title[:40],
+                        thumbnail
                     )
                 )
                 progress_tasks[chat_id] = progress_task
