@@ -104,12 +104,12 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
                 callback_data=f"ADMIN Pause|{chat_id}"
             ),
             InlineKeyboardButton(
-                text="💿",
+                text="↩️",
                 callback_data=f"ADMIN Replay|{chat_id}"
             ),
         ],
         [
-            InlineKeyboardButton(text="ᴀᴜᴛᴏᴘʟᴀʏ 🔁", callback_data=f"AutoPlay|{chat_id}"),
+            InlineKeyboardButton(text="♫", callback_data=f"AutoPlay|{chat_id}"),
             InlineKeyboardButton(text=thumb_text, callback_data=f"THUMBTOGGLE|{chat_id}"),
         ],
         [
