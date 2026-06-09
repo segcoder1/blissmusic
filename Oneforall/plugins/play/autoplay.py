@@ -167,6 +167,34 @@ async def update_progress_bar(chat_id, message_id, start_time, duration_sec, tit
             del progress_tasks[chat_id]
 
 
+async def prefetch_queue(chat_id):
+    """Prefetch songs for the queue to keep it full"""
+    try:
+        while True:
+            if chat_id not in autoplay_queues:
+                await asyncio.sleep(5)
+                continue
+            
+            # Keep queue stocked
+            if len(autoplay_queues[chat_id]) < QUEUE_PREFETCH:
+                try:
+                    for _ in range(QUEUE_PREFETCH - len(autoplay_queues[chat_id])):
+                        track_data, track_id = await get_autoplay_recommendation(chat_id)
+                        if track_data and track_id:
+                            autoplay_queues[chat_id].append({
+                                "track_data": track_data,
+                                "track_id": track_id
+                            })
+                except Exception as e:
+                    print(f"Queue prefetch error: {e}")
+            
+            await asyncio.sleep(10)
+    except asyncio.CancelledError:
+        pass
+    except Exception as e:
+        print(f"Prefetch error: {e}")
+
+
 @app.on_message(filters.command("autoplay") & filters.group & ~BANNED_USERS)
 @languageCB
 async def autoplay_command(client, message, _):
@@ -227,10 +255,7 @@ async def autoplay_disable_callback(client, CallbackQuery, _):
             progress_tasks[chat_id].cancel()
         except:
             pass
-        try:
-            del progress_tasks[chat_id]
-        except:
-            pass
+        del progress_tasks[chat_id]
     
     try:
         await CallbackQuery.answer()
@@ -672,20 +697,4 @@ async def get_autoplay_recommendation(chat_id: int):
             # Parse duration
             duration_str = track_data.get("duration", "0:00")
             try:
-                parts = duration_str.split(":")
-                if len(parts) == 2:
-                    duration_sec = int(parts[0]) * 60 + int(parts[1])
-                elif len(parts) == 3:
-                    duration_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
-                else:
-                    duration_sec = 0
-            except:
-                duration_sec = 0
-
-            track_data["duration_sec"] = duration_sec
-            track_history[chat_id].add(track_id)
-            return track_data, track_id
-    except Exception as e:
-        print(f"Final autoplay attempt error: {e}")
-
-    return None, None
+                parts = dura
