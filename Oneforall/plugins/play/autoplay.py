@@ -697,4 +697,20 @@ async def get_autoplay_recommendation(chat_id: int):
             # Parse duration
             duration_str = track_data.get("duration", "0:00")
             try:
-                parts = dura
+                parts = duration_str.split(":")
+                if len(parts) == 2:
+                    duration_sec = int(parts[0]) * 60 + int(parts[1])
+                elif len(parts) == 3:
+                    duration_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                else:
+                    duration_sec = 0
+            except:
+                duration_sec = 0
+
+            track_data["duration_sec"] = duration_sec
+            track_history[chat_id].add(track_id)
+            return track_data, track_id
+    except Exception as e:
+        print(f"Final autoplay attempt error: {e}")
+
+    return None, None
