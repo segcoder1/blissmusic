@@ -56,9 +56,9 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
     umm = math.floor(percentage)
 
     if 0 < umm <= 10:
-        bar = "|♬—————————|"
+        bar = "⚪─────────"
     elif 10 < umm < 20:
-        bar = "|—♬————————|"
+        bar = "━⚪────────"
     elif 20 <= umm < 30:
         bar = "|——♬———————|"
     elif 30 <= umm < 40:
@@ -75,7 +75,7 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
         bar = "|————————♬—|"
     else:
         bar = "|—————————♬|"
-
+        
     thumb_status = get_thumbnail_status(chat_id)
 
     thumb_text = (
@@ -106,25 +106,19 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
                 style=ButtonStyle.PRIMARY
             ),
             InlineKeyboardButton(
+                text="❚❚",
+                callback_data=f"ADMIN Pause|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
                 text="⟳",
                 callback_data=f"ADMIN Replay|{chat_id}",
                 style=ButtonStyle.DANGER
             ),
         ],
         [
-            InlineKeyboardButton(text="♫", callback_data=f"AutoPlay|{chat_id}"),
-            InlineKeyboardButton(text=thumb_text, callback_data=f"THUMBTOGGLE|{chat_id}"),
-        ],
-        [
-            InlineKeyboardButton(
-                text=_["CLOSE_BUTTON"],
-                callback_data="close",
-                style=ButtonStyle.SUCCESS
-            )
-        ],
-        [
-            InlineKeyboardButton(text="༎ຶ ᴀᴅᴅ ᴍᴇ ༎ຶ", url="https://t.me/Snowy_x_musicbot?startgroup=true"),
-        ],
+            InlineKeyboardButton(text="♫", callback_data=f"AutoPlay|{chat_id}", style=ButtonStyle.DANGER),
+        ],        
     ]
 
     return buttons
