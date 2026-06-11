@@ -1,5 +1,7 @@
 import random
+import json
 from typing import Dict, List, Union
+from datetime import datetime
 
 from Oneforall import userbot
 from Oneforall.core.mongo import mongodb
@@ -32,6 +34,9 @@ users_collection = mongodb.userscollection
 videodb = mongodb.vipvideocalls
 chatsdbc = mongodb.chatsc  # for clone
 usersdbc = mongodb.tgusersdbc  # for clone
+federationsdb = mongodb.federations  # For storing federations
+superbanteamdb = mongodb.superbanteam  # For storing superban team
+superbanrequestsdb = mongodb.superbanrequests  # For storing superban requests
 
 # Shifting to memory [mongo sucks often]
 active = []
@@ -55,9 +60,369 @@ mute = {}
 audio = {}
 video = {}
 
+
+# ─────────────────────────────
+# FEDERATION DATABASE FUNCTIONS
+# ─────────────────────────────
+async def add_federation(federation: dict) -> bool:
+    """Add or update federation"""
+    try:
+        await federationsdb.update_one(
+            {"fed_id": federation["fed_id"]},
+            {"$set": federation},
+            upsert=True
+        )
+        return True
+    except:
+        return False
+
+
+async def remove_federation(fed_id: str) -> bool:
+    """Remove federation"""
+    try:
+        await federationsdb.delete_one({"fed_id": fed_id})
+        return True
+    except:
+        return False
+
+
+async def get_federation(fed_id: str) -> Union[dict, None]:
+    """Get federation by ID"""
+    try:
+        federation = await federationsdb.find_one({"fed_id": fed_id})
+        return federation
+    except:
+        return None
+
+
+async def get_federations() -> list:
+    """Get all federations"""
+    try:
+        federations = []
+        async for fed in federationsdb.find({}):
+            federations.append(fed)
+        return federations
+    except:
+        return []
+
+
+async def add_fed_admin(fed_id: str, user_id: int) -> bool:
+    """Add admin to federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        admins = federation.get("admins", [])
+        if user_id not in admins:
+            admins.append(user_id)
+        
+        federation["admins"] = admins
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def remove_fed_admin(fed_id: str, user_id: int) -> bool:
+    """Remove admin from federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        admins = federation.get("admins", [])
+        if user_id in admins:
+            admins.remove(user_id)
+        
+        federation["admins"] = admins
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def get_fed_admins(fed_id: str) -> list:
+    """Get federation admins"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return []
+        return federation.get("admins", [])
+    except:
+        return []
+
+
+async def add_fed_ban(fed_id: str, user_id: int, reason: str = "") -> bool:
+    """Add ban to federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        bans = federation.get("bans", {})
+        bans[str(user_id)] = {"reason": reason, "timestamp": datetime.now().isoformat()}
+        
+        federation["bans"] = bans
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def remove_fed_ban(fed_id: str, user_id: int) -> bool:
+    """Remove ban from federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        bans = federation.get("bans", {})
+        if str(user_id) in bans:
+            del bans[str(user_id)]
+        
+        federation["bans"] = bans
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def get_fed_bans(fed_id: str) -> list:
+    """Get all bans in federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return []
+        
+        bans = federation.get("bans", {})
+        result = []
+        for user_id, ban_data in bans.items():
+            result.append({
+                "user_id": int(user_id),
+                "reason": ban_data.get("reason", "No reason"),
+                "timestamp": ban_data.get("timestamp")
+            })
+        return result
+    except:
+        return []
+
+
+async def is_fed_banned(fed_id: str, user_id: int) -> bool:
+    """Check if user is banned in federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        bans = federation.get("bans", {})
+        return str(user_id) in bans
+    except:
+        return False
+
+
+async def add_fed_chat(fed_id: str, chat_id: int) -> bool:
+    """Add chat to federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        chats = federation.get("chats", [])
+        if chat_id not in chats:
+            chats.append(chat_id)
+        
+        federation["chats"] = chats
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def remove_fed_chat(fed_id: str, chat_id: int) -> bool:
+    """Remove chat from federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        chats = federation.get("chats", [])
+        if chat_id in chats:
+            chats.remove(chat_id)
+        
+        federation["chats"] = chats
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def get_fed_chats(fed_id: str) -> list:
+    """Get all chats in federation"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return []
+        return federation.get("chats", [])
+    except:
+        return []
+
+
+async def transfer_federation(fed_id: str, new_owner_id: int) -> bool:
+    """Transfer federation ownership"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        federation["owner"] = new_owner_id
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def add_fed_sub(fed_id: str, sub_fed_id: str) -> bool:
+    """Subscribe federation to another"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        subs = federation.get("subscribed_feds", [])
+        if sub_fed_id not in subs:
+            subs.append(sub_fed_id)
+        
+        federation["subscribed_feds"] = subs
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def remove_fed_sub(fed_id: str, sub_fed_id: str) -> bool:
+    """Unsubscribe federation from another"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return False
+        
+        subs = federation.get("subscribed_feds", [])
+        if sub_fed_id in subs:
+            subs.remove(sub_fed_id)
+        
+        federation["subscribed_feds"] = subs
+        await add_federation(federation)
+        return True
+    except:
+        return False
+
+
+async def get_fed_subs(fed_id: str) -> list:
+    """Get all subscribed federations"""
+    try:
+        federation = await get_federation(fed_id)
+        if not federation:
+            return []
+        return federation.get("subscribed_feds", [])
+    except:
+        return []
+
+
+# ─────────────────────────────
+# SUPERBAN TEAM DATABASE
+# ─────────────────────────────
+async def add_superban_team_member(user_id: int) -> bool:
+    """Add member to superban team"""
+    try:
+        await superbanteamdb.update_one(
+            {"user_id": user_id},
+            {"$set": {"user_id": user_id, "added_at": datetime.now().isoformat()}},
+            upsert=True
+        )
+        return True
+    except:
+        return False
+
+
+async def remove_superban_team_member(user_id: int) -> bool:
+    """Remove member from superban team"""
+    try:
+        await superbanteamdb.delete_one({"user_id": user_id})
+        return True
+    except:
+        return False
+
+
+async def get_superban_team() -> list:
+    """Get all superban team members"""
+    try:
+        members = []
+        async for member in superbanteamdb.find({}):
+            members.append(member["user_id"])
+        return members
+    except:
+        return []
+
+
+async def is_superban_team_member(user_id: int) -> bool:
+    """Check if user is in superban team"""
+    try:
+        member = await superbanteamdb.find_one({"user_id": user_id})
+        return member is not None
+    except:
+        return False
+
+
+# ─────────────────────────────
+# SUPERBAN REQUESTS DATABASE
+# ─────────────────────────────
+async def add_superban_request(request_id: str, request_data: dict) -> bool:
+    """Add superban request"""
+    try:
+        await superbanrequestsdb.update_one(
+            {"request_id": request_id},
+            {"$set": request_data},
+            upsert=True
+        )
+        return True
+    except:
+        return False
+
+
+async def get_superban_request(request_id: str) -> Union[dict, None]:
+    """Get superban request"""
+    try:
+        return await superbanrequestsdb.find_one({"request_id": request_id})
+    except:
+        return None
+
+
+async def get_all_superban_requests() -> list:
+    """Get all superban requests"""
+    try:
+        requests = []
+        async for request in superbanrequestsdb.find({}):
+            requests.append(request)
+        return requests
+    except:
+        return []
+
+
+async def update_superban_request_status(request_id: str, status: str) -> bool:
+    """Update superban request status"""
+    try:
+        await superbanrequestsdb.update_one(
+            {"request_id": request_id},
+            {"$set": {"status": status, "updated_at": datetime.now().isoformat()}},
+            upsert=True
+        )
+        return True
+    except:
+        return False
+
+
 # Total Queries on bot
-
-
 async def get_queries() -> int:
     chat_id = 98324
     mode = await queriesdb.find_one({"chat_id": chat_id})
