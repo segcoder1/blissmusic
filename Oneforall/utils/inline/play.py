@@ -42,7 +42,7 @@ def track_markup(_, videoid, user_id, channel, fplay):
         [
             InlineKeyboardButton(
                 text=_["CLOSE_BUTTON"],
-                callback_data=f"forceclose {videoid}|{user_id}",
+                callback_data=f"CloseMenu",
             )
         ],
     ]
@@ -134,7 +134,7 @@ def stream_markup(_, videoid, chat_id):
             InlineKeyboardButton(text="▢", callback_data=f"ADMIN Stop|{chat_id}"),
         ],
         [
-            InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="CloseMenu", style=ButtonStyle.PRIMARY),
             InlineKeyboardButton(text="༎ຶ ᴀᴅᴅ ᴍᴇ ༎ຶ", url="https://t.me/Snowy_x_musicbot?startgroup=true"),
         ],
     ]
@@ -177,7 +177,7 @@ def autoplay_mood_markup():
         [
             InlineKeyboardButton(
                 text="❌ ᴄʟᴏsᴇ",
-                callback_data="close"
+                callback_data="CloseMenu"
             )
         ]
     )
@@ -220,7 +220,7 @@ def autoplay_language_markup():
         buttons.append(row)
 
     buttons.append(
-        [InlineKeyboardButton(text="❌ ᴄʟᴏsᴇ", callback_data="close")]
+        [InlineKeyboardButton(text="❌ ᴄʟᴏsᴇ", callback_data="CloseMenu")]
     )
 
     return InlineKeyboardMarkup(buttons)
@@ -256,7 +256,7 @@ def filters_markup_page_1():
     buttons.append([
         InlineKeyboardButton(
             text="❌ ᴄʟᴏsᴇ",
-            callback_data="close"
+            callback_data="CloseMenu"
         )
     ])
 
@@ -297,7 +297,7 @@ def filters_markup_page_2():
     buttons.append([
         InlineKeyboardButton(
             text="❌ ᴄʟᴏsᴇ",
-            callback_data="close"
+            callback_data="CloseMenu"
         )
     ])
 
@@ -338,7 +338,7 @@ def filters_markup_page_3():
     buttons.append([
         InlineKeyboardButton(
             text="❌ ᴄʟᴏsᴇ",
-            callback_data="close"
+            callback_data="CloseMenu"
         )
     ])
 
@@ -378,7 +378,7 @@ def filters_markup_page_4():
     buttons.append([
         InlineKeyboardButton(
             text="❌ ᴄʟᴏsᴇ",
-            callback_data="close"
+            callback_data="CloseMenu"
         )
     ])
 
@@ -406,7 +406,7 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
         [
             InlineKeyboardButton(
                 text=_["CLOSE_BUTTON"],
-                callback_data=f"forceclose {videoid}|{user_id}",
+                callback_data=f"CloseMenu",
             ),
         ],
     ]
@@ -424,7 +424,7 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
         [
             InlineKeyboardButton(
                 text=_["CLOSE_BUTTON"],
-                callback_data=f"forceclose {videoid}|{user_id}",
+                callback_data=f"CloseMenu",
             ),
         ],
     ]
@@ -451,7 +451,7 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
             ),
             InlineKeyboardButton(
                 text=_["CLOSE_BUTTON"],
-                callback_data=f"forceclose {query}|{user_id}",
+                callback_data=f"CloseMenu",
             ),
             InlineKeyboardButton(
                 text="▷",
@@ -472,7 +472,7 @@ def telegram_markup(_, chat_id):
                 text="ɴᴇxᴛ",
                 callback_data=f"PanelMarkup None|{chat_id}",
             ),
-            InlineKeyboardButton(text=_["CLOSEMENU_BUTTON"], callback_data="close"),
+            InlineKeyboardButton(text=_["CLOSEMENU_BUTTON"], callback_data="CloseMenu"),
         ],
     ]
     return buttons
@@ -546,7 +546,7 @@ def stream_markup2(_, chat_id):
             ),
         ],
         [
-            InlineKeyboardButton(text=_["CLOSEMENU_BUTTON"], callback_data="close"),
+            InlineKeyboardButton(text=_["CLOSEMENU_BUTTON"], callback_data="CloseMenu"),
         ],
     ]
     return buttons
@@ -598,7 +598,7 @@ def stream_markup_timer2(_, chat_id, played, dur):
             ),
         ],
         [
-            InlineKeyboardButton(text=_["CLOSEMENU_BUTTON"], callback_data="close"),
+            InlineKeyboardButton(text=_["CLOSEMENU_BUTTON"], callback_data="CloseMenu"),
         ],
     ]
     return buttons
