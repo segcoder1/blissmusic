@@ -111,6 +111,35 @@ SPOTIFY_ALBUM_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be940
 SPOTIFY_PLAYLIST_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
 
 
+# ─────────────────────────────
+# FEDERATION & SUPERBAN CONFIG
+# ─────────────────────────────
+
+# Superban storage channel ID - where all superban logs will be sent
+# Get your chat ID by using /id command in Telegram
+# Format: -100XXXXXXXXXXXXX (for private channels/groups)
+superban_storage_id = int(getenv("SUPERBAN_STORAGE_ID", LOGGER_ID))
+
+# Alternative naming for the same variable (some imports may use this)
+SUPERBAN_LOG_CHANNEL = int(getenv("SUPERBAN_LOG_CHANNEL", LOGGER_ID))
+
+# Federation storage channel ID - where federation logs will be sent
+# Use the same channel or create a separate one for federation logs
+FEDERATION_STORAGE_ID = int(getenv("FEDERATION_STORAGE_ID", LOGGER_ID))
+
+# Enable/Disable Federation System
+FEDERATION_ENABLED = bool(getenv("FEDERATION_ENABLED", True))
+
+# Enable/Disable Superban System
+SUPERBAN_ENABLED = bool(getenv("SUPERBAN_ENABLED", True))
+
+# Maximum number of federations a user can create
+MAX_FEDERATIONS_PER_USER = int(getenv("MAX_FEDERATIONS_PER_USER", "5"))
+
+# Maximum number of chats in a single federation
+MAX_CHATS_PER_FEDERATION = int(getenv("MAX_CHATS_PER_FEDERATION", "100"))
+
+
 def time_to_seconds(time):
     stringt = str(time)
     return sum(int(x) * 60**i for i, x in enumerate(reversed(stringt.split(":"))))
