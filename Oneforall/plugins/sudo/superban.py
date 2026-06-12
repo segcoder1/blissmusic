@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from Oneforall import app
-from Oneforall.misc import SUDOERS, ADMINS
+from Oneforall.misc import SUDOERS
 from Oneforall.utils import get_readable_time
 from Oneforall.utils.database import (
     add_banned_user,
