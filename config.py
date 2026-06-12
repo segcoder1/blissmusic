@@ -109,7 +109,7 @@ YOUTUBE_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983ce
 SPOTIFY_ARTIST_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
 SPOTIFY_ALBUM_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
 SPOTIFY_PLAYLIST_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-
+REPO_VID_URL= "https://graph.org/file/6ba86202a034dc2ec046c-79ccd4567747060e8a.mp4"
 
 # ─────────────────────────────
 # FEDERATION & SUPERBAN CONFIG
