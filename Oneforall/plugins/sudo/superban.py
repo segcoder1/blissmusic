@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from pyrogram import filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ChatMemberStatus
 
 from Oneforall import app
 from Oneforall.misc import SUDOERS
@@ -28,6 +28,15 @@ from config import BANNED_USERS, superban_storage_id
 LOG_GIF = "https://files.catbox.moe/qdm48e.gif"
 
 
+async def is_admin(chat_id: int, user_id: int) -> bool:
+    """Check if user is admin in chat"""
+    try:
+        member = await app.get_chat_member(chat_id, user_id)
+        return member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    except:
+        return False
+
+
 # ─────────────────────────────
 # SUPERBAN TEAM MANAGEMENT
 # ─────────────────────────────
@@ -37,6 +46,10 @@ async def add_steam_member(client, message: Message, _):
     """Add member to superban team"""
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["steam_1"])
+    
+    # Check if sender is admin
+    if not await is_admin(message.chat.id, message.from_user.id):
+        return await message.reply_text("❌ ʏᴏᴜ ᴍᴜsᴛ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!")
     
     user = await extract_user(message)
     
@@ -58,6 +71,10 @@ async def remove_steam_member(client, message: Message, _):
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["steam_4"])
     
+    # Check if sender is admin
+    if not await is_admin(message.chat.id, message.from_user.id):
+        return await message.reply_text("❌ ʏᴏᴜ ᴍᴜsᴛ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!")
+    
     user = await extract_user(message)
     
     is_member = await is_superban_team_member(user.id)
@@ -75,6 +92,10 @@ async def remove_steam_member(client, message: Message, _):
 @language
 async def list_steam_members(client, message: Message, _):
     """List all superban team members"""
+    # Check if sender is admin
+    if not await is_admin(message.chat.id, message.from_user.id):
+        return await message.reply_text("❌ ʏᴏᴜ ᴍᴜsᴛ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!")
+    
     team_members = await get_superban_team()
     
     if not team_members:
@@ -103,6 +124,10 @@ async def superban_request(client, message: Message, _):
     """Create superban request"""
     if not superban_storage_id:
         return await message.reply_text(_["sb_1"])
+    
+    # Check if sender is admin
+    if not await is_admin(message.chat.id, message.from_user.id):
+        return await message.reply_text("❌ ʏᴏᴜ ᴍᴜsᴛ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!")
     
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["sb_2"])
