@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from pyrogram import filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ChatMemberStatus
 
 from Oneforall import app
 from Oneforall.misc import SUDOERS
@@ -34,7 +34,7 @@ LOG_GIF = "https://files.catbox.moe/qdm48e.gif"
 @app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & SUDOERS)
 @language
 async def add_steam_member(client, message: Message, _):
-    """Add member to superban team"""
+    """Add member to superban team - SUDOERS ONLY"""
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["steam_1"])
     
@@ -54,7 +54,7 @@ async def add_steam_member(client, message: Message, _):
 @app.on_message(filters.command(["steamrem"], prefixes=["/", "!", "."]) & SUDOERS)
 @language
 async def remove_steam_member(client, message: Message, _):
-    """Remove member from superban team"""
+    """Remove member from superban team - SUDOERS ONLY"""
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["steam_4"])
     
@@ -74,7 +74,7 @@ async def remove_steam_member(client, message: Message, _):
 @app.on_message(filters.command(["steamlist"], prefixes=["/", "!", "."]) & SUDOERS)
 @language
 async def list_steam_members(client, message: Message, _):
-    """List all superban team members"""
+    """List all superban team members - SUDOERS ONLY"""
     team_members = await get_superban_team()
     
     if not team_members:
@@ -97,10 +97,10 @@ async def list_steam_members(client, message: Message, _):
 # ─────────────────────────────
 # SUPERBAN REQUEST SYSTEM
 # ─────────────────────────────
-@app.on_message(filters.command(["superban"], prefixes=["/", "!", "."]))
+@app.on_message(filters.command(["superban"], prefixes=["/", "!", "."]) & SUDOERS)
 @language
 async def superban_request(client, message: Message, _):
-    """Create superban request"""
+    """Create superban request - SUDOERS ONLY"""
     if not superban_storage_id:
         return await message.reply_text(_["sb_1"])
     
@@ -175,7 +175,7 @@ async def superban_request(client, message: Message, _):
 
 @app.on_callback_query(filters.regex(r"^sb_accept_"))
 async def accept_superban(client, callback: CallbackQuery):
-    """Accept superban request"""
+    """Accept superban request - SUPERBAN TEAM ONLY"""
     # Check if user is in superban team
     is_member = await is_superban_team_member(callback.from_user.id)
     if not is_member:
@@ -249,7 +249,7 @@ async def accept_superban(client, callback: CallbackQuery):
         f"  • **ғᴇᴅᴇʀᴀᴛɪᴏɴ ʙᴀɴɴᴇᴅ ғʀᴏᴍ:** {total_fed_chats} ᴄʜᴀᴛs\n"
         f"  • **ᴛᴏᴛᴀʟ ᴊᴜʀɪsᴅɪᴄᴛɪᴏɴ:** {number_of_chats + total_fed_chats} ᴄʜᴀᴛs\n\n"
         f"⏰ **ᴛɪᴍᴇsᴛᴀᴍᴘ:** {datetime.now().strftime('%d-%m-%Y %H:%M:%S ᴜᴛᴄ')}\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━"
+        f"━━━━━━━━━━━━━━━���━━━━━━━━━"
     )
     
     try:
@@ -280,7 +280,7 @@ async def accept_superban(client, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^sb_decline_"))
 async def decline_superban(client, callback: CallbackQuery):
-    """Decline superban request"""
+    """Decline superban request - SUPERBAN TEAM ONLY"""
     # Check if user is in superban team
     is_member = await is_superban_team_member(callback.from_user.id)
     if not is_member:
