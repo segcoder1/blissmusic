@@ -23,7 +23,7 @@ from config import BANNED_USERS, superban_storage_id
 # ─────────────────────────────
 # LOG GIF
 # ─────────────────────────────
-LOG_GIF = "https://files.catbox.moe/qdm48e.gif"
+LOG_GIF = "https://files.catbox.moe/2zsh0m.gif"
 
 
 # ─────────────────────────────
