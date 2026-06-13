@@ -1,7 +1,7 @@
 import asyncio
 from pyrogram import filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ChatMemberStatus
 
 from Oneforall import app
 from Oneforall.misc import SUDOERS
@@ -48,12 +48,26 @@ def federation_admin_or_owner(func):
     return wrapper
 
 
+async def is_chat_admin(client, chat_id: int, user_id: int) -> bool:
+    """Check if user is admin or creator in chat using ChatMemberStatus"""
+    try:
+        member = await client.get_chat_member(chat_id, user_id)
+        return member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    except:
+        return False
+
+
 # ─────────────────────────────
 # CREATE FEDERATION
 # ─────────────────────────────
-@app.on_message(filters.command(["newfed", "fnew"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["newfed", "fnew"], prefixes=["/", "!", "."]))
 @language
 async def create_federation(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 2:
         return await message.reply_text(_["fed_3"])
     
@@ -85,9 +99,14 @@ async def create_federation(client, message: Message, _):
 # ─────────────────────────────
 # FEDERATION INFO
 # ─────────────────────────────
-@app.on_message(filters.command(["fedinfo", "finfo"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fedinfo", "finfo"], prefixes=["/", "!", "."]))
 @language
 async def federation_info(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["fed_5"])
     
@@ -114,9 +133,14 @@ async def federation_info(client, message: Message, _):
 # ─────────────────────────────
 # FEDERATION BAN
 # ─────────────────────────────
-@app.on_message(filters.command(["fban", "sfban"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fban", "sfban"], prefixes=["/", "!", "."]))
 @language
 async def federation_ban(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 3:
         return await message.reply_text(_["fed_7"])
     
@@ -186,9 +210,14 @@ async def federation_ban(client, message: Message, _):
 # ─────────────────────────────
 # FEDERATION UNBAN
 # ─────────────────────────────
-@app.on_message(filters.command(["unfban", "funban"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["unfban", "funban"], prefixes=["/", "!", "."]))
 @language
 async def federation_unban(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 3:
         return await message.reply_text(_["fed_12"])
     
@@ -235,9 +264,14 @@ async def federation_unban(client, message: Message, _):
 # ─────────────────────────────
 # FEDERATION BAN LIST
 # ─────────────────────────────
-@app.on_message(filters.command(["fbanlist", "exportfbans", "fexport"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fbanlist", "exportfbans", "fexport"], prefixes=["/", "!", "."]))
 @language
 async def federation_ban_list(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["fed_16"])
     
@@ -315,9 +349,14 @@ async def federation_check_ban(client, message: Message, _):
 # ─────────────────────────────
 # TRANSFER FEDERATION OWNERSHIP
 # ─────────────────────────────
-@app.on_message(filters.command(["transferfed", "ftransfer"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["transferfed", "ftransfer"], prefixes=["/", "!", "."]))
 @language
 async def transfer_federation_ownership(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 3:
         return await message.reply_text(_["fed_26"])
     
@@ -343,9 +382,14 @@ async def transfer_federation_ownership(client, message: Message, _):
 # ─────────────────────────────
 # PROMOTE FEDERATION ADMIN
 # ─────────────────────────────
-@app.on_message(filters.command(["fpromote"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fpromote"], prefixes=["/", "!", "."]))
 @language
 async def promote_fed_admin(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 3:
         return await message.reply_text(_["fed_29"])
     
@@ -374,9 +418,14 @@ async def promote_fed_admin(client, message: Message, _):
 # ─────────────────────────────
 # DEMOTE FEDERATION ADMIN
 # ─────────────────────────────
-@app.on_message(filters.command(["fdemote"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fdemote"], prefixes=["/", "!", "."]))
 @language
 async def demote_fed_admin(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 3:
         return await message.reply_text(_["fed_32"])
     
@@ -405,9 +454,14 @@ async def demote_fed_admin(client, message: Message, _):
 # ─────────────────────────────
 # LIST FEDERATION ADMINS
 # ─────────────────────────────
-@app.on_message(filters.command(["fadmins", "fedadmins"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fadmins", "fedadmins"], prefixes=["/", "!", "."]))
 @language
 async def federation_admins(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["fed_35"])
     
@@ -445,6 +499,10 @@ async def join_federation(client, message: Message, _):
     if not message.chat.type.name == "supergroup":
         return await message.reply_text(_["fed_37"])
     
+    # Check if user is admin using ChatMemberStatus
+    if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+        return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 2:
         return await message.reply_text(_["fed_38"])
     
@@ -453,11 +511,6 @@ async def join_federation(client, message: Message, _):
     
     if not federation:
         return await message.reply_text(_["fed_1"])
-    
-    # Check if user is admin
-    member = await app.get_chat_member(message.chat.id, message.from_user.id)
-    if not member.status.name in ["administrator", "creator"]:
-        return await message.reply_text(_["fed_39"])
     
     if message.chat.id in federation["chats"]:
         return await message.reply_text(_["fed_40"])
@@ -470,16 +523,15 @@ async def join_federation(client, message: Message, _):
 
 # ─────────────────────────────
 # LEAVE FEDERATION (ADMIN ONLY)
-# ─────────────────────────────
+# ─────────��───────────────────
 @app.on_message(filters.command(["leavefed", "fleave"], prefixes=["/", "!", "."]))
 @language
 async def leave_federation(client, message: Message, _):
     if not message.chat.type.name == "supergroup":
         return await message.reply_text(_["fed_37"])
     
-    # Check if user is admin
-    member = await app.get_chat_member(message.chat.id, message.from_user.id)
-    if not member.status.name in ["administrator", "creator"]:
+    # Check if user is admin using ChatMemberStatus
+    if not await is_chat_admin(client, message.chat.id, message.from_user.id):
         return await message.reply_text(_["fed_39"])
     
     federations = await get_federations()
@@ -502,9 +554,14 @@ async def leave_federation(client, message: Message, _):
 # ─────────────────────────────
 # FEDERATION SUBSCRIBE
 # ─────────────────────────────
-@app.on_message(filters.command(["fsub"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fsub"], prefixes=["/", "!", "."]))
 @language
 async def subscribe_federation(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 3:
         return await message.reply_text(_["fed_44"])
     
@@ -532,9 +589,14 @@ async def subscribe_federation(client, message: Message, _):
 # ─────────────────────────────
 # FEDERATION UNSUBSCRIBE
 # ─────────────────────────────
-@app.on_message(filters.command(["funsub"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["funsub"], prefixes=["/", "!", "."]))
 @language
 async def unsubscribe_federation(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 3:
         return await message.reply_text(_["fed_47"])
     
@@ -561,9 +623,14 @@ async def unsubscribe_federation(client, message: Message, _):
 # ─────────────────────────────
 # LIST FEDERATION CHATS
 # ─────────────────────────────
-@app.on_message(filters.command(["fchats"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fchats"], prefixes=["/", "!", "."]))
 @language
 async def list_federation_chats(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 2:
         return await message.reply_text(_["fed_50"])
     
@@ -592,9 +659,14 @@ async def list_federation_chats(client, message: Message, _):
 # ─────────────────────────────
 # RENAME FEDERATION
 # ─────────────────────────────
-@app.on_message(filters.command(["frename"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["frename"], prefixes=["/", "!", "."]))
 @language
 async def rename_federation(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 3:
         return await message.reply_text(_["fed_53"])
     
@@ -620,9 +692,14 @@ async def rename_federation(client, message: Message, _):
 # ─────────────────────────────
 # DELETE FEDERATION
 # ─────────────────────────────
-@app.on_message(filters.command(["fdelete"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fdelete"], prefixes=["/", "!", "."]))
 @language
 async def delete_federation(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 2:
         return await message.reply_text(_["fed_55"])
     
@@ -644,9 +721,14 @@ async def delete_federation(client, message: Message, _):
 # ─────────────────────────────
 # SET FEDERATION LOG CHANNEL
 # ─────────────────────────────
-@app.on_message(filters.command(["fsetlog", "setfedlog"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["fsetlog", "setfedlog"], prefixes=["/", "!", "."]))
 @language
 async def set_federation_log(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 2:
         return await message.reply_text(_["fed_57"])
     
@@ -671,9 +753,14 @@ async def set_federation_log(client, message: Message, _):
 # ─────────────────────────────
 # UNSET FEDERATION LOG CHANNEL
 # ─────────────────────────────
-@app.on_message(filters.command(["funsetlog", "unsetfedlog"], prefixes=["/", "!", "."]) & ADMINS)
+@app.on_message(filters.command(["funsetlog", "unsetfedlog"], prefixes=["/", "!", "."]))
 @language
 async def unset_federation_log(client, message: Message, _):
+    # Check if user is admin in supergroup
+    if message.chat.type.name == "supergroup":
+        if not await is_chat_admin(client, message.chat.id, message.from_user.id):
+            return await message.reply_text(_["fed_39"])
+    
     if len(message.command) < 2:
         return await message.reply_text(_["fed_59"])
     
