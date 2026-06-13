@@ -1,7 +1,8 @@
 import asyncio
 from pyrogram import filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ChatMemberStatus
+from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import ChatMemberStatus
 
 from Oneforall import app
 from Oneforall.misc import SUDOERS
