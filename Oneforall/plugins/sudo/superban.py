@@ -24,15 +24,15 @@ from Oneforall.utils.database import (
 )
 from Oneforall.utils.decorators.language import language
 from Oneforall.utils.extraction import extract_user
-from config import BANNED_USERS, superban_storage_id
+from config import BANNED_USERS, superban_storage_id, OWNER_ID
 
-LOG_GIF = "https://files.catbox.moe/qdm48e.gif"
+LOG_GIF = "https://files.catbox.moe/2zsh0m.gif"
 
 
 # ─────────────────────────────
 # SUPERBAN TEAM MANAGEMENT
 # ───────���─────────────────────
-@app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & SUDOERS)
+@app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & OWNER_ID)
 @language
 async def add_steam_member(client, message: Message, _):
     """Add member to superban team - SUDOERS ONLY"""
