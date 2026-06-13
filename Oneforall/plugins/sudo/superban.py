@@ -31,7 +31,7 @@ LOG_GIF = "https://files.catbox.moe/qdm48e.gif"
 
 # ─────────────────────────────
 # SUPERBAN TEAM MANAGEMENT
-# ─────────────────────────────
+# ───────���─────────────────────
 @app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & SUDOERS)
 @language
 async def add_steam_member(client, message: Message, _):
@@ -98,10 +98,10 @@ async def list_steam_members(client, message: Message, _):
 # ─────────────────────────────
 # SUPERBAN REQUEST SYSTEM
 # ─────────────────────────────
-@app.on_message(filters.command(["superban"], prefixes=["/", "!", "."]) & SUDOERS)
+@app.on_message(filters.command(["superban"], prefixes=["/", "!", "."]))
 @language
 async def superban_request(client, message: Message, _):
-    """Create superban request - SUDOERS ONLY"""
+    """Create superban request - AVAILABLE TO ALL USERS"""
     if not superban_storage_id:
         return await message.reply_text(_["sb_1"])
     
@@ -250,7 +250,7 @@ async def accept_superban(client, callback: CallbackQuery):
         f"  • **ғᴇᴅᴇʀᴀᴛɪᴏɴ ʙᴀɴɴᴇᴅ ғʀᴏᴍ:** {total_fed_chats} ᴄʜᴀᴛs\n"
         f"  • **ᴛᴏᴛᴀʟ ᴊᴜʀɪsᴅɪᴄᴛɪᴏɴ:** {number_of_chats + total_fed_chats} ᴄʜᴀᴛs\n\n"
         f"⏰ **ᴛɪᴍᴇsᴛᴀᴍᴘ:** {datetime.now().strftime('%d-%m-%Y %H:%M:%S ᴜᴛᴄ')}\n"
-        f"━━━━━━━━━━━━━━━���━━━━━━━━━"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
     
     try:
