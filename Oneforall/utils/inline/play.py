@@ -118,6 +118,7 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
         ],
         [
             InlineKeyboardButton(text="♫", callback_data=f"AutoPlay|{chat_id}", style=ButtonStyle.DANGER),
+            InlineKeyboardButton(text="💾 ꜱᴀᴠᴇ", callback_data=f"save_track_playlist {vidid}", style=ButtonStyle.SUCCESS),
         ],        
     ]
 
