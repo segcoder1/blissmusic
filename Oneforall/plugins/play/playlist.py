@@ -881,3 +881,52 @@ async def save_track_playlist(client, CallbackQuery, _):
         )
     except Exception as e:
         await CallbackQuery.answer(f"ᴇʀʀᴏʀ: {str(e)}", show_alert=True)
+
+@app.on_callback_query(filters.regex("save_track_playlist") & ~BANNED_USERS)
+@languageCB
+async def save_track_playlist(client, CallbackQuery, _):
+    """Save the currently playing track to user's playlist"""
+    callback_data = CallbackQuery.data.strip()
+    videoid = callback_data.split(None, 1)[1]
+    user_id = CallbackQuery.from_user.id
+    
+    from Oneforall import YouTube
+    
+    # Check if video is already in playlist
+    _check = await get_playlist(user_id, videoid)
+    if _check:
+        try:
+            return await CallbackQuery.answer(_["playlist_8"], show_alert=True)
+        except:
+            return
+    
+    # Check playlist limit
+    _count = await get_playlist_names(user_id)
+    count = len(_count)
+    if count == SERVER_PLAYLIST_LIMIT:
+        try:
+            return await CallbackQuery.answer(
+                _["playlist_9"].format(SERVER_PLAYLIST_LIMIT),
+                show_alert=True,
+            )
+        except:
+            return
+    
+    try:
+        # Fetch video details
+        title, duration_min, duration_sec, thumbnail, vidid = await YouTube.details(videoid, True)
+        title = (title[:50]).title()
+        
+        # Save to playlist
+        plist = {
+            "videoid": vidid,
+            "title": title,
+            "duration": duration_min,
+        }
+        await save_playlist(user_id, videoid, plist)
+        
+        await CallbackQuery.answer(
+            _["playlist_10"].format(title), show_alert=True
+        )
+    except Exception as e:
+        await CallbackQuery.answer(f"ᴇʀʀᴏʀ: {str(e)}", show_alert=True)
