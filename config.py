@@ -118,7 +118,7 @@ REPO_VID_URL= "https://graph.org/file/6ba86202a034dc2ec046c-79ccd4567747060e8a.m
 # Superban storage channel ID - where all superban logs will be sent
 # Get your chat ID by using /id command in Telegram
 # Format: -100XXXXXXXXXXXXX (for private channels/groups)
-superban_storage_id = int(getenv("SUPERBAN_STORAGE_ID", -1003966769594))
+superban_storage_id = int(getenv("SUPERBAN_STORAGE_ID", -1004349721575))
 
 # Alternative naming for the same variable (some imports may use this)
 SUPERBAN_LOG_CHANNEL = int(getenv("SUPERBAN_LOG_CHANNEL", -1003912418692))
@@ -137,7 +137,7 @@ SUPERBAN_ENABLED = bool(getenv("SUPERBAN_ENABLED", True))
 MAX_FEDERATIONS_PER_USER = int(getenv("MAX_FEDERATIONS_PER_USER", "7"))
 
 # Maximum number of chats in a single federation
-MAX_CHATS_PER_FEDERATION = int(getenv("MAX_CHATS_PER_FEDERATION", "10000"))
+MAX_CHATS_PER_FEDERATION = int(getenv("MAX_CHATS_PER_FEDERATION", "1000000"))
 
 
 def time_to_seconds(time):
