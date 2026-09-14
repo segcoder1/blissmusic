@@ -78,12 +78,6 @@ def stream_markup_timer(_, vidid, chat_id, played, dur):
         
     thumb_status = get_thumbnail_status(chat_id)
 
-    thumb_text = (
-        "🖼 ᴛʜᴜᴍʙ: ✅"
-        if thumb_status == "on"
-        else "🖼 ᴛʜᴜᴍʙ: ❌"
-    )
-
     button_style = get_button_style()
 
     buttons = [
@@ -558,7 +552,7 @@ def stream_markup_timer2(_, chat_id, played, dur):
     duration_sec = time_to_seconds(dur)
     percentage = (played_sec / duration_sec) * 100
     umm = math.floor(percentage)
-    if 0 < umm <= 40:
+    if 0 < umm <= 10:
         bar = "◉——————————"
     elif 10 < umm < 20:
         bar = "—◉—————————"
@@ -570,7 +564,7 @@ def stream_markup_timer2(_, chat_id, played, dur):
         bar = "————◉——————"
     elif 50 <= umm < 60:
         bar = "——————◉————"
-    elif 50 <= umm < 70:
+    elif 60 <= umm < 70:
         bar = "———————◉———"
     else:
         bar = "——————————◉"
@@ -768,7 +762,7 @@ def panel_markup_4(_, vidid, chat_id, played, dur):
     duration_sec = time_to_seconds(dur)
     percentage = (played_sec / duration_sec) * 100
     umm = math.floor(percentage)
-    if 0 < umm <= 40:
+    if 0 < umm <= 10:
         bar = "◉——————————"
     elif 10 < umm < 20:
         bar = "—◉—————————"
@@ -780,7 +774,7 @@ def panel_markup_4(_, vidid, chat_id, played, dur):
         bar = "————◉——————"
     elif 50 <= umm < 60:
         bar = "——————◉————"
-    elif 50 <= umm < 70:
+    elif 60 <= umm < 70:
         bar = "———————◉———"
     else:
         bar = "——————————◉"
