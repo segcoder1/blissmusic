@@ -27,10 +27,10 @@ PRIVATE_BOT_MODE = getenv("PRIVATE_BOT_MODE", None)
 DURATION_LIMIT_MIN = int(getenv("DURATION_LIMIT", 100000))
 
 # Chat id of a group for logging bot's activities
-LOGGER_ID = int(getenv("LOGGER_ID", -1003882647583))
+LOGGER_ID = int(getenv("LOGGER_ID", -1004349721575))
 
 # Get this value from @BRANDRD_ROBOT on Telegram by /id
-OWNER_ID = int(getenv("OWNER_ID", "8364692780"))
+OWNER_ID = int(getenv("OWNER_ID", "8439959093"))
 SUDO_USERS = list(map(int, getenv("SUDO_USERS", "7487670897").split()))
 
 ## Fill these variables if you're deploying on heroku.
@@ -48,8 +48,8 @@ GIT_TOKEN = getenv(
     "GIT_TOKEN", None
 )  # Fill this variable if your upstream repository is private
 
-SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/theinfinitynetwork")
-SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/theinfinity_support")
+SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/kaiosgg")
+SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/codesuphere")
 
 # Set this to True if you want the assistant to automatically leave chats after an interval
 AUTO_LEAVING_ASSISTANT = bool(getenv("AUTO_LEAVING_ASSISTANT", False))
@@ -96,19 +96,19 @@ votemode = {}
 autoclean = []
 confirmer = {}
 
-START_IMG_URL = getenv("START_IMG_URL", "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg")
+START_IMG_URL = getenv("START_IMG_URL", "https://gofile.io/d/KbkdJFb7")
 START_VIDEO_URL = getenv("START_VIDEO_URL", "https://files.catbox.moe/ty42li.mp4")
-PING_IMG_URL = getenv("PING_IMG_URL", "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg")
-PLAYLIST_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-STATS_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-TELEGRAM_AUDIO_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-TELEGRAM_VIDEO_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-STREAM_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-SOUNCLOUD_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-YOUTUBE_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-SPOTIFY_ARTIST_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-SPOTIFY_ALBUM_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
-SPOTIFY_PLAYLIST_IMG_URL = "https://graph.org/file/91f8d6a8fd408555c2aa4-202c7be9409983cefd.jpg"
+PING_IMG_URL = getenv("PING_IMG_URL", "https://gofile.io/d/KbkdJFb7")
+PLAYLIST_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+STATS_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+TELEGRAM_AUDIO_URL = "https://gofile.io/d/KbkdJFb7"
+TELEGRAM_VIDEO_URL = "https://graph.org/file/6ba86202a034dc2ec046c-79ccd4567747060e8a.mp4"
+STREAM_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+SOUNCLOUD_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+YOUTUBE_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+SPOTIFY_ARTIST_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+SPOTIFY_ALBUM_IMG_URL = "https://gofile.io/d/KbkdJFb7"
+SPOTIFY_PLAYLIST_IMG_URL = "https://gofile.io/d/KbkdJFb7"
 REPO_VID_URL= "https://graph.org/file/6ba86202a034dc2ec046c-79ccd4567747060e8a.mp4"
 
 # ─────────────────────────────
