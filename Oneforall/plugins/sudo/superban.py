@@ -31,11 +31,11 @@ LOG_GIF = "https://files.catbox.moe/2zsh0m.gif"
 
 # ─────────────────────────────
 # SUPERBAN TEAM MANAGEMENT
-# ───────���─────────────────────
-@app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & OWNER_ID)
+# ─────────────────────────────
+@app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & filters.user(OWNER_ID))
 @language
 async def add_steam_member(client, message: Message, _):
-    """Add member to superban team - SUDOERS ONLY"""
+    """Add member to superban team - OWNER ONLY"""
     if not message.reply_to_message and len(message.command) < 2:
         return await message.reply_text(_["steam_1"])
     
