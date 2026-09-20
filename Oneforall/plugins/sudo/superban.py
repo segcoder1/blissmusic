@@ -28,10 +28,6 @@ from config import BANNED_USERS, superban_storage_id, OWNER_ID
 
 LOG_GIF = "https://files.catbox.moe/2zsh0m.gif"
 
-
-# ─────────────────────────────
-# SUPERBAN TEAM MANAGEMENT
-# ─────────────────────────────
 @app.on_message(filters.command(["steamadd"], prefixes=["/", "!", "."]) & filters.user(OWNER_ID))
 @language
 async def add_steam_member(client, message: Message, _):
@@ -95,9 +91,6 @@ async def list_steam_members(client, message: Message, _):
     await message.reply_text(msg)
 
 
-# ─────────────────────────────
-# SUPERBAN REQUEST SYSTEM
-# ─────────────────────────────
 @app.on_message(filters.command(["superban"], prefixes=["/", "!", "."]))
 @language
 async def superban_request(client, message: Message, _):
@@ -133,7 +126,6 @@ async def superban_request(client, message: Message, _):
     
     await add_superban_request(request_id, request_data)
     
-    # Create inline buttons for team
     buttons = [
         [
             InlineKeyboardButton(
@@ -200,7 +192,7 @@ async def accept_superban(client, callback: CallbackQuery):
     served_chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
     number_of_chats = 0
     
-    mystic_msg = await callback.message.reply_text("⏳ ᴘʀᴏᴄᴇssɪɴɢ ɢʟᴏʙᴀʟ ʙᴀɴ...")
+    mystic_msg = await callback.message.reply_text("⏳ ᴘʀᴏᴄᴇssɪɴɢ ʙᴀɴ...")
     
     for chat_id in served_chats:
         try:
