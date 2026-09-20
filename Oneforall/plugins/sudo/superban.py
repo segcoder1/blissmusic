@@ -147,9 +147,9 @@ async def superban_request(client, message: Message, _):
         ]
     ]
     
-    # Send to superban log group
+    # Send to superban log channel via char charatcers ;
     log_msg = (
-        f"🔔 **sᴜᴘᴇʀʙᴀɴ ʀᴇqᴜᴇsᴛ**\n\n"
+        f"🔔 sᴜᴘᴇʀʙᴀɴ ʀᴇqᴜᴇsᴛ\n\n"
         f"👤 **ᴜsᴇʀ:** {user.mention}\n"
         f"🆔 **ᴜsᴇʀ ɪᴅ:** `{user.id}`\n"
         f"📝 **ᴜsᴇʀɴᴀᴍᴇ:** @{user.username or 'ɴ/ᴀ'}\n"
